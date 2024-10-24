@@ -1,0 +1,41 @@
+{
+    "type": "autoencoder",
+    "sample_size": 2097152,
+    "sample_rate": 44100,
+    "audio_channels": 2,
+    "chunked":true,
+    "config": {
+                    "encoder": {
+                        "type": "oobleck",
+                        "requires_grad": false,
+                        "config": {
+                            "in_channels": 2,
+                            "channels": 128,
+                            "c_mults": [1, 2, 4, 8, 16],
+                            "strides": [2, 4, 4, 8, 8],
+                            "latent_dim": 128,
+                            "use_snake": true
+                        }
+                    },
+                    "decoder": {
+                        "type": "oobleck",
+                        "config": {
+                            "out_channels": 2,
+                            "channels": 128,
+                            "c_mults": [1, 2, 4, 8, 16],
+                            "strides": [2, 4, 4, 8, 8],
+                            "latent_dim": 64,
+                            "use_snake": true,
+                            "final_tanh": false
+                        }
+                    },
+                    "bottleneck": {
+                        "type": "vae"
+                    },
+                    "latent_dim": 64,
+                    "downsampling_ratio": 2048,
+                    "io_channels": 2
+                }
+            }
+        
+    

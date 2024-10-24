@@ -1,0 +1,4 @@
+data/
+pre_encode_env/
+
+pretransform.safetensors
