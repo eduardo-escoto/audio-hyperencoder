@@ -7,8 +7,10 @@ requires-python = ">=3.9"
 dependencies = [
     "diffusers>=0.31.0",
     "huggingface-hub>=0.27.0",
+    "lightning>=2.5.0.post0",
     "matplotlib>=3.9.4",
     "numpy>=1.23.5",
+    "safetensors>=0.4.5",
     "scikit-learn>=1.6.0",
     "stable-audio-tools>=0.0.16",
     "torch>=2.5.1",
@@ -24,10 +26,10 @@ torch = [
 torchvision = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
-
 torchaudio = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
+stable-audio-tools = { path = "stable-audio-tools" }
 
 [[tool.uv.index]]
 name = "pytorch-cu121"

@@ -367,8 +367,10 @@ source = { virtual = "." }
 dependencies = [
     { name = "diffusers" },
     { name = "huggingface-hub" },
+    { name = "lightning" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "safetensors" },
     { name = "scikit-learn" },
     { name = "stable-audio-tools" },
     { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
@@ -389,10 +391,12 @@ dev = [
 requires-dist = [
     { name = "diffusers", specifier = ">=0.31.0" },
     { name = "huggingface-hub", specifier = ">=0.27.0" },
+    { name = "lightning", specifier = ">=2.5.0.post0" },
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "numpy", specifier = ">=1.23.5" },
+    { name = "safetensors", specifier = ">=0.4.5" },
     { name = "scikit-learn", specifier = ">=1.6.0" },
-    { name = "stable-audio-tools", specifier = ">=0.0.16" },
+    { name = "stable-audio-tools", directory = "stable-audio-tools" },
     { name = "torch", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
     { name = "torch", marker = "platform_system == 'Darwin'", specifier = ">=2.5.1" },
     { name = "torchaudio", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
@@ -481,34 +485,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c1/a8/4f750e1febe3b8d448794a7b85cd0efd2eb649eb915c990bcdd3650a5f3b/bokeh-3.4.3.tar.gz", hash = "sha256:b7c22fb0f7004b04f12e1b7b26ee0269a26737a08ded848fb58f6a34ec1eb155", size = 6410715 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/65/5d/e96520996607c9b894a4716ddedc447a68351b0a8729f26ac012c8e7041b/bokeh-3.4.3-py3-none-any.whl", hash = "sha256:c6f33817f866fc67fbeb5df79cd13a8bb592c05c591f3fd7f4f22b824f7afa01", size = 7017720 },
-]
-
-[[package]]
-name = "boto3"
-version = "1.7.84"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-    { name = "jmespath" },
-    { name = "s3transfer" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/2b/7010a5189859eec725c36081b1d1c8e721000ebdf81a1682ec6b64e1c373/boto3-1.7.84.tar.gz", hash = "sha256:64496f2c814e454e26c024df86bd08fb4643770d0e2b7a8fd70055fc6683eb9d", size = 93151 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/6e/faf7c6c3ae59641c75023fb5dcc8a02c33752ac8ccadf9931e8d8364f2fe/boto3-1.7.84-py2.py3-none-any.whl", hash = "sha256:0ed4b107c3b4550547aaec3c9bb17df068ff92d1f6f4781205800e2cb8a66de5", size = 128502 },
-]
-
-[[package]]
-name = "botocore"
-version = "1.10.84"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "docutils" },
-    { name = "jmespath" },
-    { name = "python-dateutil" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/67/01/43759329a6f7036aa739e86d446b908fa207222e224e537cd3d66fdb4c29/botocore-1.10.84.tar.gz", hash = "sha256:d3e4b5a2c903ea30d19d41ea2f65d0e51dce54f4f4c4dfd6ecd7b04f240844a8", size = 4612644 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/b7/cb08cd1af2bb0d0dfb393101a93b6ab6fb80f109ab7b37f2f34386c11351/botocore-1.10.84-py2.py3-none-any.whl", hash = "sha256:380852e1adb9ba4ba9ff096af61f88a6888197b86e580e1bd786f04ebe6f9c0c", size = 4478913 },
 ]
 
 [[package]]
@@ -1009,15 +985,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/08/12/9c22a58c0b1e29271051222d8906257616da84135af9ed167c9e28f85cb3/docstring_parser-0.16.tar.gz", hash = "sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e", size = 26565 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d5/7c/e9fcff7623954d86bdc17782036cbf715ecab1bec4847c008557affe1ca8/docstring_parser-0.16-py3-none-any.whl", hash = "sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637", size = 36533 },
-]
-
-[[package]]
-name = "docutils"
-version = "0.21.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ae/ed/aefcc8cd0ba62a0560c3c18c33925362d46c6075480bfa4df87b28e169a9/docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f", size = 2204444 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929e75e7e5e6255e614fcc67572cfd083959cdef3b7aad79/docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2", size = 587408 },
 ]
 
 [[package]]
@@ -1733,15 +1700,6 @@ wheels = [
 ]
 
 [[package]]
-name = "jmespath"
-version = "0.10.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3c/56/3f325b1eef9791759784aa5046a8f6a1aff8f7c898a2e34506771d3b99d8/jmespath-0.10.0.tar.gz", hash = "sha256:b85d0567b8666149a93172712e68920734333c0ce7e89b78b3e987f71e5ed4f9", size = 21607 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/cb/5f001272b6faeb23c1c9e0acc04d48eaaf5c862c17709d20e3469c6e0139/jmespath-0.10.0-py2.py3-none-any.whl", hash = "sha256:cdf6525904cc597730141d61b36f2e4b8ecc257c420fa2f4549bac2c2d0cb72f", size = 24489 },
-]
-
-[[package]]
 name = "joblib"
 version = "1.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2267,6 +2225,27 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f1/01/e5935a1fffbc877c94d9ea2eeaabc6b5115e51e787ac46de83adff173475/librosa-0.9.2.tar.gz", hash = "sha256:5b576b5efdce428e90bc988bdd5a953d12a727e5f931f30d74c53b63abbe3c89", size = 200053 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/1c/23ef2fd02913d65d43dc7516fc829af709314a66c6f0bdc2e361fdcecc2d/librosa-0.9.2-py3-none-any.whl", hash = "sha256:322a813e6d37af9fbc369e6a637dcf5fdc5c6925ce806a0d27c68de61a81350f", size = 214321 },
+]
+
+[[package]]
+name = "lightning"
+version = "2.5.0.post0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fsspec", extra = ["http"] },
+    { name = "lightning-utilities" },
+    { name = "packaging" },
+    { name = "pytorch-lightning" },
+    { name = "pyyaml" },
+    { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
+    { name = "torch", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
+    { name = "torchmetrics" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e6/6d/d9d209d9ab3d270ee89afb8f71a3d84d48d41a1880e89d8215d26e8018b7/lightning-2.5.0.post0.tar.gz", hash = "sha256:f720fe4f6d03a7f15f9aef3112c5a0d1eafd8d27b903f4a1354b609685b2ec70", size = 628132 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d4/54/2de887e964a561776ac49c5e715ca8a56138ea7e2b95325e0a79aa46a070/lightning-2.5.0.post0-py3-none-any.whl", hash = "sha256:b08463326e6fb39cb3e4db8ff2660a80ce3372a0688c80e3370c091346ea220c", size = 815241 },
 ]
 
 [[package]]
@@ -4178,29 +4157,6 @@ wheels = [
 ]
 
 [[package]]
-name = "s3fs"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "botocore" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/45/c1/cb652aacd55290eecd2a3e28f311dac5ce61f243ecd535a133db53499247/s3fs-0.2.0.tar.gz", hash = "sha256:a31fe41dd8ee8358b65e808125ab47054edebdf3d5c6d8a2139fcf4547d524dc", size = 46347 }
-
-[[package]]
-name = "s3transfer"
-version = "0.1.13"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9a/66/c6a5ae4dbbaf253bd662921b805e4972451a6d214d0dc9fb3300cb642320/s3transfer-0.1.13.tar.gz", hash = "sha256:90dc18e028989c609146e241ea153250be451e05ecc0c2832565231dacdf59c1", size = 103335 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/14/2a0004d487464d120c9fb85313a75cd3d71a7506955be458eebfe19a6b1d/s3transfer-0.1.13-py2.py3-none-any.whl", hash = "sha256:c7a9ec356982d5e9ab2d4b46391a7d6a950e2b04c472419f5fdec70cc0ada72f", size = 59642 },
-]
-
-[[package]]
 name = "safetensors"
 version = "0.4.5"
 source = { registry = "https://pypi.org/simple" }
@@ -4607,7 +4563,7 @@ wheels = [
 [[package]]
 name = "stable-audio-tools"
 version = "0.0.16"
-source = { registry = "https://pypi.org/simple" }
+source = { directory = "stable-audio-tools" }
 dependencies = [
     { name = "aeiou" },
     { name = "alias-free-torch" },
@@ -4628,7 +4584,6 @@ dependencies = [
     { name = "prefigure" },
     { name = "pytorch-lightning" },
     { name = "pywavelets" },
-    { name = "s3fs" },
     { name = "safetensors" },
     { name = "sentencepiece" },
     { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
@@ -4644,9 +4599,40 @@ dependencies = [
     { name = "webdataset" },
     { name = "x-transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/df/942b8e6ffc91d5fcd0f4a5a557993625021db22b73c83a2363a2e82629e3/stable_audio_tools-0.0.16.tar.gz", hash = "sha256:f0bb2862a3028b29997b3d0249565ee88947dcbb0f6bc31af5a4d99dafdef3a2", size = 108473 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/b9/94c7dab8cfe7d41a23133634576fb89412e3430f28ca8d44411a77c2f18d/stable_audio_tools-0.0.16-py3-none-any.whl", hash = "sha256:fae33255c8798aa7a07afca829fd2112a0063701e4cf2ebf3a7b6aeee47b117b", size = 121087 },
+
+[package.metadata]
+requires-dist = [
+    { name = "aeiou", specifier = "==0.0.20" },
+    { name = "alias-free-torch", specifier = "==0.0.6" },
+    { name = "auraloss", specifier = "==0.4.0" },
+    { name = "descript-audio-codec", specifier = "==1.0.0" },
+    { name = "einops", specifier = "==0.7.0" },
+    { name = "einops-exts", specifier = "==0.0.4" },
+    { name = "ema-pytorch", specifier = "==0.2.3" },
+    { name = "encodec", specifier = "==0.1.1" },
+    { name = "gradio", specifier = ">=3.42.0" },
+    { name = "huggingface-hub" },
+    { name = "importlib-resources", specifier = "==5.12.0" },
+    { name = "k-diffusion", specifier = "==0.1.1" },
+    { name = "laion-clap", specifier = "==1.1.4" },
+    { name = "local-attention", specifier = "==1.8.6" },
+    { name = "pandas", specifier = "==2.0.2" },
+    { name = "pedalboard", specifier = "==0.7.4" },
+    { name = "prefigure", specifier = "==0.0.9" },
+    { name = "pytorch-lightning", specifier = "==2.1.0" },
+    { name = "pywavelets", specifier = "==1.4.1" },
+    { name = "safetensors" },
+    { name = "sentencepiece", specifier = "==0.1.99" },
+    { name = "torch", specifier = ">=2.0.1" },
+    { name = "torchaudio", specifier = ">=2.0.2" },
+    { name = "torchmetrics", specifier = "==0.11.4" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "v-diffusion-pytorch", specifier = "==0.0.2" },
+    { name = "vector-quantize-pytorch", specifier = "==1.9.14" },
+    { name = "wandb", specifier = "==0.15.4" },
+    { name = "webdataset", specifier = "==0.2.48" },
+    { name = "x-transformers", specifier = "<1.27.0" },
 ]
 
 [[package]]

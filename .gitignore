@@ -170,11 +170,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-data/
-pre_encode_env/
-
+# safetensors
 pretransform.safetensors
-
 *.safetensors
+
+# vs code files
 *.code-workspace
 
+# miscellaneous data paths
+/data
+/model_cache
