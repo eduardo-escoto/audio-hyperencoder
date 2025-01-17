@@ -1,17 +1,14 @@
 import json
-
 import argparse
 
-import lightning as L
-
-from os import environ
-
+# from os import environ
 from pathlib import Path
 
-from stable_audio_tools.models.autoencoders import AudioAutoencoder
-from stable_audio_tools.models.bottleneck import RVQVAEBottleneck
+import lightning as L
 from stable_audio_tools import get_pretrained_model
 
+# from stable_audio_tools.models.bottleneck import RVQVAEBottleneck
+# from stable_audio_tools.models.autoencoders import AudioAutoencoder
 
 argparser = argparse.ArgumentParser()
 
@@ -42,11 +39,12 @@ class LatentHyperencoder(L.LightningModule):
 
     @staticmethod
     def from_config(model_config, autoencoder, bottleneck):
-        target_latent_dim = model_config['model']['pretransform']['config']['latent_dim']
-        
+        target_latent_dim = model_config["model"]["pretransform"]["config"][
+            "latent_dim"
+        ]
 
         pass
-        
+
     def test_step(self, *args, **kwargs):
         return super().test_step(*args, **kwargs)
 
@@ -94,6 +92,18 @@ def get_model_config(
     return model_config
 
 
+def create_latent_dataloader():
+    # Placeholder function for creating the latent dataloader
+    # Replace with actual implementation
+    return None
+
+
+def run_training(hyperencoder, latent_dataloader):
+    # Placeholder function for running the training
+    # Replace with actual implementation
+    pass
+
+
 def main(model_name, autoencoder, bottleneck, hf_token=None):
     """
     Step 1: Model Config
@@ -106,9 +116,7 @@ def main(model_name, autoencoder, bottleneck, hf_token=None):
         We'll have to ensure the autoencoder and bottlenecks are configured
         properly to receive the latent tensors properly
     """
-    hyperencoder = LatentHyperencoder.from_config(
-        model_config, autoencoder, bottleneck
-    )
+    hyperencoder = LatentHyperencoder.from_config(model_config, autoencoder, bottleneck)
     """
     Step 3: Create latent dataloader
         Load our pre-encoded latents from directory

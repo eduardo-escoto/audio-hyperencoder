@@ -361,57 +361,6 @@ wheels = [
 ]
 
 [[package]]
-name = "audio-latent-of-latents"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "diffusers" },
-    { name = "huggingface-hub" },
-    { name = "lightning" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "safetensors" },
-    { name = "scikit-learn" },
-    { name = "stable-audio-tools" },
-    { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
-    { name = "torch", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
-    { name = "torchaudio", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
-    { name = "torchaudio", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
-    { name = "torchvision", version = "0.20.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
-    { name = "torchvision", version = "0.20.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "jupyter" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "diffusers", specifier = ">=0.31.0" },
-    { name = "huggingface-hub", specifier = ">=0.27.0" },
-    { name = "lightning", specifier = ">=2.5.0.post0" },
-    { name = "matplotlib", specifier = ">=3.9.4" },
-    { name = "numpy", specifier = ">=1.23.5" },
-    { name = "safetensors", specifier = ">=0.4.5" },
-    { name = "scikit-learn", specifier = ">=1.6.0" },
-    { name = "stable-audio-tools", directory = "stable-audio-tools" },
-    { name = "torch", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
-    { name = "torch", marker = "platform_system == 'Darwin'", specifier = ">=2.5.1" },
-    { name = "torchaudio", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
-    { name = "torchaudio", marker = "platform_system == 'Darwin'", specifier = ">=2.5.1" },
-    { name = "torchvision", marker = "platform_system != 'Darwin'", specifier = ">=0.20.1", index = "https://download.pytorch.org/whl/cu121" },
-    { name = "torchvision", marker = "platform_system == 'Darwin'", specifier = ">=0.20.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "jupyter", specifier = ">=1.1.1" },
-]
-
-[[package]]
 name = "audioread"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1553,6 +1502,59 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/36/c6/e3709b61de8e7832dbe19f0d9637e81356cede733d99359fbce125423774/huggingface_hub-0.27.0.tar.gz", hash = "sha256:902cce1a1be5739f5589e560198a65a8edcfd3b830b1666f36e4b961f0454fac", size = 379286 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/8c/fbdc0a88a622d9fa54e132d7bf3ee03ec602758658a2db5b339a65be2cfe/huggingface_hub-0.27.0-py3-none-any.whl", hash = "sha256:8f2e834517f1f1ddf1ecc716f91b120d7333011b7485f665a9a412eacb1a2a81", size = 450537 },
+]
+
+[[package]]
+name = "hyperencoder"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "diffusers" },
+    { name = "huggingface-hub" },
+    { name = "lightning" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "safetensors" },
+    { name = "scikit-learn" },
+    { name = "stable-audio-tools" },
+    { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
+    { name = "torch", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
+    { name = "torchaudio", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
+    { name = "torchaudio", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
+    { name = "torchvision", version = "0.20.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
+    { name = "torchvision", version = "0.20.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "platform_system != 'Darwin'" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "jupyter" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "diffusers", specifier = ">=0.31.0" },
+    { name = "huggingface-hub", specifier = ">=0.27.0" },
+    { name = "lightning", specifier = ">=2.5.0.post0" },
+    { name = "matplotlib", specifier = ">=3.9.4" },
+    { name = "numpy", specifier = ">=1.23.5" },
+    { name = "safetensors", specifier = ">=0.4.5" },
+    { name = "scikit-learn", specifier = ">=1.6.0" },
+    { name = "stable-audio-tools", directory = "stable-audio-tools" },
+    { name = "torch", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
+    { name = "torch", marker = "platform_system == 'Darwin'", specifier = ">=2.5.1" },
+    { name = "torchaudio", marker = "platform_system != 'Darwin'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
+    { name = "torchaudio", marker = "platform_system == 'Darwin'", specifier = ">=2.5.1" },
+    { name = "torchvision", marker = "platform_system != 'Darwin'", specifier = ">=0.20.1", index = "https://download.pytorch.org/whl/cu121" },
+    { name = "torchvision", marker = "platform_system == 'Darwin'", specifier = ">=0.20.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "ruff", specifier = ">=0.8.4" },
 ]
 
 [[package]]
