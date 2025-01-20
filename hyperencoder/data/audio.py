@@ -16,19 +16,26 @@ class AudioDataset(Dataset):
     def __init__(
         self,
         file_paths: list[Path],
-        lazy_load: bool = True,
+        lazy_load: bool = False,
         preprocessor: Optional[Callable[[Tensor, int], Tensor]] = None,
     ):
-        self.lazy_load: bool = lazy_load
+        self.lazy_load: bool = False  # lazy_load
         self.file_paths: list[Path] = list(file_paths)
         self.preprocessor: Optional[Callable[[Tensor, int], Tensor]] = preprocessor
 
-        self.sample_rates: list[int] = [None] * len(self.file_paths)
-        self.audio_tensors: Optional[Tensor] = [None] * len(self.file_paths)
+        self.sample_rates: list[int] = []
+        self.audio_tensors: Optional[Tensor] = []
+        self.valid_paths = []
 
-        if not lazy_load:
-            for file_path in self.file_paths:
-                self.__load_audio__(file_path)
+        self.erred_idxs = []
+        if not self.lazy_load:
+            for idx, file_path in enumerate(self.file_paths):
+                try:
+                    self.__load_audio__(idx)
+                except Exception as _:
+                    print(f"Failed to load {file_path} at index {idx}")
+
+        self.file_paths = self.valid_paths
 
     def __len__(self):
         return len(self.file_paths)
@@ -44,10 +51,11 @@ class AudioDataset(Dataset):
             self.file_paths[idx], self.preprocessor
         )
 
-        self.audio_tensors[idx] = waveform
-        self.sample_rates[idx] = sample_rate
+        self.audio_tensors.append(waveform)
+        self.sample_rates.append(sample_rate)
+        self.valid_paths.append(self.file_paths[idx])
 
-        return self.audio_tensors[idx], self.sample_rates[idx]
+        return waveform, sample_rate, self.file_paths[idx]
 
     @staticmethod
     def load_audio(
@@ -71,9 +79,9 @@ class AudioDataModule(LightningDataModule):
         self,
         data_dir: Union[Path, str],
         # tensor_group_type: AudioTensorGroupType,
-        batch_size: int = 3,
+        batch_size: int = 1,
         num_workers: int = 41,
-        file_pattern: Optional[str] = r".*\.wav$",
+        file_pattern: str = r".*\.wav$",
         group_pattern: Optional[str] = r"Track\d*",
         lazy_load: bool = True,
     ):
@@ -84,11 +92,15 @@ class AudioDataModule(LightningDataModule):
         self.num_workers: int = num_workers
         self.data_dir: Path = data_dir if type(data_dir) is Path else Path(data_dir)
         self.file_pattern: Pattern = re_compile(file_pattern)
-        self.group_pattern: Pattern = re_compile(group_pattern)
+        self.group_pattern: Optional[Pattern] = (
+            re_compile(group_pattern) if group_pattern is not None else None
+        )
 
         self.lazy_load: bool = lazy_load
 
-        self.file_paths = get_file_paths_by_pattern(self.data_dir, self.file_pattern)
+        self.file_paths = list(
+            get_file_paths_by_pattern(self.data_dir, self.file_pattern)
+        )
 
         if self.group_pattern is None:
             self.grouped_file_paths = {file.stem: [file] for file in self.file_paths}
@@ -100,9 +112,8 @@ class AudioDataModule(LightningDataModule):
     def setup(self, stage: str):
         # only implementing predict for now
         if stage == "predict":
-            self.prediction_dataset = AudioDataset(
-                self.file_paths, lazy_load=self.lazy_load
-            )
+            self.prediction_dataset = AudioDataset(self.file_paths, lazy_load=False)
+            self.file_paths = self.prediction_dataset.file_paths
 
     def train_dataloader(self):
         pass

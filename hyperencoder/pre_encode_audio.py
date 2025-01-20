@@ -71,7 +71,7 @@ def get_input_files(
 ):
     if path_file is not None:
         file_paths = ""
-        with open(path_file, "r") as path_file:
+        with open(path_file) as path_file:
             file_paths = path_file.read()
         file_paths = file_paths.split("\n")
         return file_paths
@@ -128,7 +128,7 @@ def process_batches(
     n_jobs=None,
     parent_level=1,
 ):
-    with open(output_dir_path / f"failures.log", "w") as fail_file:
+    with open(output_dir_path / "failures.log", "w") as fail_file:
         for batch_name, file_paths in tqdm(
             batches.items(), total=len(list(batches.keys()))
         ):
@@ -224,7 +224,7 @@ def main(args):
     model = load_model(hf_token=args.token)
 
     encoded_audios = audio_encoding_pipeline(
-        model.pretransform, input_path, n_devices=n_devices
+        model.pretransform.model, input_path, n_devices=n_devices
     )
     print(len(encoded_audios))
     # output_audios(encoded_audios, output_path)

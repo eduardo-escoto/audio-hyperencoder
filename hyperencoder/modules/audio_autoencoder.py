@@ -26,7 +26,7 @@ class AudioAutoEncoder(LightningModule):
         decoded_batch = self.autoencoder.decode_audio(batch)
         return decoded_batch
 
-    def predict_step(self, batch, batch_idx, dataloader_idx):
+    def predict_step(self, batch, batch_idx, dataloader_idx=None):
         encoded_batch = self.encode_batch(batch)
 
         if self.encode_only:

@@ -69,7 +69,7 @@ def get_model_config(
 
     # load from cache or download and create cache
     if config_path.exists() and not force_download:
-        with open(config_path, "r") as config_file:
+        with open(config_path) as config_file:
             model_config = json.load(config_file)
     else:
         from huggingface_hub import login
