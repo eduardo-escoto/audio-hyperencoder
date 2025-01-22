@@ -45,9 +45,7 @@ class LatentDataModule(LightningDataModule):
         lazy_load: bool = False,
     ):
         super().__init__()
-        self.data_dir = (
-            Path(data_dir) if isinstance(data_dir, str) else data_dir
-        )
+        self.data_dir = Path(data_dir) if isinstance(data_dir, str) else data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.train_split = train_split

@@ -53,7 +53,7 @@ def main(model_name, autoencoder, bottleneck, hf_token=None):
         from the config to properly configure latent space encoder/decoder
     """
     model_config = get_model_config(model_name, hf_token=hf_token)
-    
+
     """
     Step 2: Create the hyperencoder and bottleneck
         We'll have to ensure the autoencoder and bottlenecks are configured

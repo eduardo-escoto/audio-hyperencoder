@@ -18,5 +18,5 @@ parser.add_argument(
     "-n", "--n-devices", required=False, help="number of devices to use"
 )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(parser.parse_args())

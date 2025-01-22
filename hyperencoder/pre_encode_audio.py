@@ -25,7 +25,9 @@ from .modules import AudioAutoEncoder
 # parser.add_argument(
 #     "-i", "--input-dir", required=True, help="data directory of files to pre-encode"
 # )
-# parser.add_argument("-o", "--output-dir", required=True, help="directory to output to")
+# parser.add_argument(
+# "-o", "--output-dir", required=True, help="directory to output to"
+# )
 # parser.add_argument(
 #     "-n", "--n-devices", required=False, help="number of devices to use"
 # )
@@ -52,7 +54,6 @@ def load_model(hf_token=None):
     if hf_token is not None:
         # token = get_env.get("HF_TOKEN")
         login_to_hf(token=hf_token)
-
 
     # Download model
     model, pretrained_model_config = get_pretrained_model(
@@ -197,7 +198,7 @@ def audio_encoding_pipeline(
     audio_pretransform: AutoencoderPretransform, input_path, n_devices=1
 ):
     dm = AudioDataModule(
-        input_path, batch_size=1, file_pattern= r".*\.wav$", group_pattern=r"Track\d*"
+        input_path, batch_size=1, file_pattern=r".*\.wav$", group_pattern=r"Track\d*"
     )
     model = AudioAutoEncoder(audio_pretransform, encode_only=True)
 
@@ -206,13 +207,14 @@ def audio_encoding_pipeline(
     encoded_audio = trainer.predict(model, dm)
     return encoded_audio
 
+
 def main(args):
     warnings.simplefilter(action="ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", module="torch")
-    warnings.filterwarnings("ignore", module="stable_audio_tools")  
+    warnings.filterwarnings("ignore", module="stable_audio_tools")
     warnings.filterwarnings("ignore", module="x_transformers")
     warnings.filterwarnings("ignore", module="vector_quantize_pytorch")
-    torch.set_float32_matmul_precision('medium')
+    torch.set_float32_matmul_precision("medium")
     # args = parser.parse_args()
     n_devices = args.n_devices if args.n_devices is not None else 1
     input_path = pathlib.Path(args.input_dir)
