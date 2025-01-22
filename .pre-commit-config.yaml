@@ -21,5 +21,8 @@ repos:
     rev: 0.5.22
     hooks:
       - id: uv-lock
+      # Base requirements
+      - id: uv-export
+      # Dev requirements
       - id: uv-export
         args: [--group, dev, --output-file, requirements-dev.txt]
