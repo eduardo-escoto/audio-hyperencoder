@@ -15,7 +15,7 @@ class LatentDataset(Dataset):
 
         if not self.lazy_load:
             self.cache = {
-                file_path: load_file(file_path) for file_path in self.file_paths
+                file_path: load_file(file_path)["mix"] for file_path in self.file_paths
             }
 
     def __len__(self):
@@ -26,7 +26,7 @@ class LatentDataset(Dataset):
         if file_path in self.cache:
             return self.cache[file_path]
         else:
-            latents = load_file(file_path)
+            latents = load_file(file_path)["mix"]
             if self.lazy_load:
                 self.cache[file_path] = latents
             return latents

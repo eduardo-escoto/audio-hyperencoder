@@ -4,12 +4,14 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
+
 dependencies = [
     "diffusers>=0.31.0",
     "huggingface-hub>=0.27.0",
     "lightning>=2.5.0.post0",
     "matplotlib>=3.9.4",
     "numpy>=1.23.5",
+    "pypesq",
     "safetensors>=0.4.5",
     "scikit-learn>=1.6.0",
     "stable-audio-tools>=0.0.16",
@@ -17,6 +19,15 @@ dependencies = [
     "torchaudio>=2.5.1",
     "torchvision>=0.20.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "jupyter>=1.1.1",
+    "pre-commit>=4.1.0",
+    "ruff>=0.8.4",
+]
+
 
 [tool.uv.sources]
 torch = [
@@ -28,7 +39,8 @@ torchvision = [
 torchaudio = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
-stable-audio-tools = { path = "stable-audio-tools" }
+stable-audio-tools = { git = "https://github.com/eduardo-escoto/stable-audio-tools" }
+pypesq = { git = "https://github.com/vBaiCai/python-pesq" }
 
 [[tool.uv.index]]
 name = "pytorch-cu121"
@@ -67,15 +79,6 @@ skip-magic-trailing-comma = false
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
-
-
-[dependency-groups]
-dev = [
-    "ipykernel>=6.29.5",
-    "jupyter>=1.1.1",
-    "pre-commit>=4.1.0",
-    "ruff>=0.8.4",
-]
-
-[project.scripts]
-pre_encode = "hyperencoder.__main__"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

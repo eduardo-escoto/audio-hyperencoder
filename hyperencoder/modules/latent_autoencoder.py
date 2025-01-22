@@ -1,7 +1,10 @@
 from enum import Enum
 from typing import Union
 
+from torch.nn import Module as TorchModule
 from lightning import LightningModule
+from torch.optim import Adam
+from torch.functional import F
 from stable_audio_tools.models.bottleneck import (
     Bottleneck,
     FSQBottleneck,
@@ -15,8 +18,10 @@ from stable_audio_tools.models.autoencoders import (
     OobleckEncoder,
 )
 
+from ..models.hyperencoder import HyperEncoder
 
-class SupportedBottleneckTypes(Enum):
+
+class BottleneckTypes(Enum):
     FSQ = FSQBottleneck
     RVQ = RVQBottleneck
     RVQVAE = RVQVAEBottleneck
@@ -25,46 +30,56 @@ class SupportedBottleneckTypes(Enum):
         return self.value
 
 
-class SupportedEncoderDecoderTypes(Enum):
+class EncoderDecoderTypes(Enum):
     OOBLECK = (OobleckEncoder, OobleckDecoder)
     VANILLA = (EncoderBlock, DecoderBlock)
 
-    def get_encoder_decoder(self):
+    def get_encoder_decoder(self) -> tuple[TorchModule, TorchModule]:
         return self.value
 
 
 class LatentHyperencoder(LightningModule):
-    def __init__(self, autoencoder, bottleneck):
+    def __init__(self, hyperencoder: HyperEncoder):
         super().__init__()
-        self.auto_enc = autoencoder
-        self.bottleneck = bottleneck
+        self.hyperencoder = hyperencoder
 
     @staticmethod
-    def from_config(
-        model_config: dict,
-        autoencoder_type: str,
-        bottleneck_type: str,
-        hyper_latent_dim: int = 10,
+    def factory(
+        target_dim: int,
+        hyper_latent_dim: int = 4,
+        autoencoder_type: EncoderDecoderTypes = EncoderDecoderTypes.OOBLECK,
+        bottleneck_type: BottleneckTypes = BottleneckTypes.FSQ,
         bottleneck_kwargs: Union[dict, None] = None,
         autoencoder_kwargs: Union[dict, None] = None,
     ):
-        """
-        This function builds the underlying encoder model from the stability audio open
-        model config, and instantiates the LatentHyperencoder with the given encoder
-        model and bottleneck type.
-        """
-        target_dim = model_config["model"]["pretransform"]["config"]["latent_dim"]
+        Encoder, Decoder = autoencoder_type.get_encoder_decoder()
+        Bottleneck = bottleneck_type.get_bottleneck()
 
-        pass
+        encoder = Encoder(
+            in_channels=target_dim,
+            latent_dim=hyper_latent_dim,
+            **autoencoder_kwargs if autoencoder_kwargs else {},
+        )
+        decoder = Decoder(
+            out_channels=target_dim,
+            latent_dim=hyper_latent_dim,
+            **autoencoder_kwargs if autoencoder_kwargs else {},
+        )
 
-    def test_step(self, *args, **kwargs):
-        return super().test_step(*args, **kwargs)
+        bottleneck = Bottleneck(**bottleneck_kwargs if bottleneck_kwargs else {})
 
-    def validation_step(self, *args, **kwargs):
-        return super().validation_step(*args, **kwargs)
+        return LatentHyperencoder(HyperEncoder(encoder, decoder, bottleneck))
 
-    def training_step(self, *args, **kwargs):
-        return super().training_step(*args, **kwargs)
+    def __reconstruction_loss__(self, latents, reconstructed_latents):
+        return F.mse_loss(latents, reconstructed_latents)
+
+    def training_step(self, batch, batch_idx):
+        latents = batch
+        reconstructed_latents = self.hyperencoder(latents)
+        loss = self.__reconstruction_loss__(latents, reconstructed_latents)
+        self.log("train_loss", loss)
+        return loss
 
     def configure_optimizers(self):
-        return super().configure_optimizers()
+        optimizer = Adam(self.parameters(), lr=1e-3)
+        return {"optimizer": optimizer}
