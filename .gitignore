@@ -180,5 +180,8 @@ pretransform.safetensors
 # miscellaneous data paths
 /data
 /model_cache
-.ruff_cache
+/.ruff_cache
 /lightning_logs
+/sPDMX_Mount
+/.venv
+/checkpoints

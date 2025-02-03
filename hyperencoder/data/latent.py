@@ -5,6 +5,12 @@ import torch
 from lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader, random_split
 from safetensors.torch import load_file
+from stable_audio_tools.data.dataset import PreEncodedDataset, LocalDatasetConfig
+
+"""
+Not going to use........
+just realized stable-audio-tools has a pre-encoded dataset class. 
+"""
 
 
 class LatentDataset(Dataset):
@@ -55,8 +61,15 @@ class LatentDataModule(LightningDataModule):
         self.lazy_load = lazy_load
 
     def setup(self, stage: Optional[str] = None):
-        self.file_paths = list(self.data_dir.glob("*.safetensors"))
-        dataset = LatentDataset(self.file_paths, lazy_load=self.lazy_load)
+        # self.file_paths = list(self.data_dir.glob("*.safetensors"))
+        # dataset = LatentDataset(self.file_paths, lazy_load=self.lazy_load)
+        dataset = PreEncodedDataset(
+            [LocalDatasetConfig("latents", str(self.data_dir))],
+            latent_crop_length=1024,
+            latent_extension="safetensors",
+            read_metadata=False,
+            random_crop=True,
+        )
 
         total_size = len(dataset)
         train_size = int(total_size * self.train_split)

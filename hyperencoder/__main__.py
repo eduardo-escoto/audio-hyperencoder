@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from .pre_encode_audio import main
+from .pre_encode import main
 
 parser = ArgumentParser(
     prog="audio_pre_encoder",

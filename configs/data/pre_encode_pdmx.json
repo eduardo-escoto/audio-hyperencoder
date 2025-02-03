@@ -1,0 +1,10 @@
+{
+    "dataset_type": "audio_dir",
+    "datasets": [
+        {
+            "id": "sPDMX",
+            "path": "/home/eduardo/Projects/pre_encode_audio/sPDMX_Mount"
+        }
+    ],
+    "random_crop": true
+}

@@ -11,6 +11,7 @@ dependencies = [
     "lightning>=2.5.0.post0",
     "matplotlib>=3.9.4",
     "numpy>=1.23.5",
+    "prefigure>=0.0.9",
     "pypesq",
     "safetensors>=0.4.5",
     "scikit-learn>=1.6.0",
@@ -18,6 +19,7 @@ dependencies = [
     "torch>=2.5.1",
     "torchaudio>=2.5.1",
     "torchvision>=0.20.1",
+    "wandb>=0.15.4",
 ]
 
 [dependency-groups]
@@ -26,6 +28,7 @@ dev = [
     "jupyter>=1.1.1",
     "pre-commit>=4.1.0",
     "ruff>=0.8.4",
+    "wandb>=0.15.4",
 ]
 
 
@@ -39,7 +42,7 @@ torchvision = [
 torchaudio = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
-stable-audio-tools = { git = "https://github.com/eduardo-escoto/stable-audio-tools" }
+stable-audio-tools = { path = "stable-audio-tools" , editable = true }
 pypesq = { git = "https://github.com/vBaiCai/python-pesq" }
 
 [[tool.uv.index]]

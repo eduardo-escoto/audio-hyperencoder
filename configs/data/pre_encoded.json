@@ -1,0 +1,12 @@
+{
+    "dataset_type": "pre_encoded",
+    "datasets": [
+        {
+            "id": "pre_encoded_babyslakh",
+            "path": "/home/eduardo/Projects/pre_encode_audio/data"
+        }
+    ],
+    "random_crop": true,
+    "extensions": ["safetensors", "npy"],
+    "safetensor_key": "latents"
+}

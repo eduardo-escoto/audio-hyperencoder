@@ -1,0 +1,62 @@
+{
+    "model_type": "hyperencoder",
+    "model": {
+        "encoder": {
+            "type": "oobleck",
+            "config": {
+                "in_channels": 64,
+                "channels": 4,
+                "latent_dim": 4,
+                "c_mults": [1, 2, 4, 8, 16],
+                "strides": [2, 4, 4, 8, 8],
+                "use_snake": true
+            }
+        },
+        "decoder": {
+            "type": "oobleck",
+            "config": {
+                "out_channels": 64,
+                "channels": 4,
+                "latent_dim": 4,
+                "c_mults": [1, 2, 4, 8, 16],
+                "strides": [2, 4, 4, 8, 8],
+                "use_snake": true,
+                "final_tanh": true
+            }
+        },
+        "bottleneck": {
+            "type": "fsq",
+            "config": {
+                "levels": [8, 5, 5, 5]
+            }
+        },
+        "latent_dim": 4,
+        "in_channels": 64,
+        "out_channels": 64
+    },
+    "training": {
+        "optimizer_configs": {
+            "hyperencoder": {
+                "optimizer": {
+                    "type": "AdamW",
+                    "config": {
+                        "lr": 5e-5,
+                        "betas": [0.9, 0.999],
+                        "weight_decay": 1e-3
+                    }
+                },
+                "scheduler": {
+                    "type": "InverseLR",
+                    "config": {
+                        "inv_gamma": 1000000,
+                        "power": 0.5,
+                        "warmup": 0.99
+                    }
+                }
+            }
+        }
+    },
+    "demo": {
+        
+    }
+}
