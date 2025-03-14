@@ -9,6 +9,10 @@ from prefigure import get_all_args
 from torch.multiprocessing import set_sharing_strategy
 from lightning.pytorch.loggers import CometLogger, WandbLogger
 from lightning.pytorch.callbacks import Callback, ModelCheckpoint
+from stable_audio_tools.training import (
+    create_model_from_config,
+    create_training_wrapper_from_config,
+)
 from stable_audio_tools.data.dataset import create_dataloader_from_config
 
 # from .modules.latent_autoencoder import BottleneckTypes, EncoderDecoderTypes
@@ -46,7 +50,8 @@ def run_training(hyperencoder, latent_dataloader, checkoint_dir):
     trainer.fit(hyperencoder, latent_dataloader)
 
 
-# def main(model_name, input_dir, checkpoint_dir, autoencoder, bottleneck, hf_token=None):
+# def main(
+# model_name, input_dir, checkpoint_dir, autoencoder, bottleneck, hf_token=None):
 #     """
 #     Step 1: Model Config
 #         Get model config such that we can get tensor shape and channels
@@ -107,7 +112,8 @@ def main():
 
     initialize_logger(f"{args.save_dir}/training.log")
 
-    # logging.info(f"Training hyperencoder with {args.autoencoder} and {args.bottleneck}")
+    # logging.info(f"Training hyperencoder with {args.autoencoder}
+    # and {args.bottleneck}")
     logging.info(f"CUDE_VISIBLE_DEVICES={environ.get('CUDA_VISIBLE_DEVICES')}")
 
     set_sharing_strategy("file_system")
@@ -148,6 +154,8 @@ def main():
     else:
         strategy = "ddp_find_unused_parameters_true" if args.num_gpus > 1 else "auto"
 
+    model = create_model_from_config(model_config)
+    training_wrapper = create_training_wrapper_from_config(model_config, model)
     if args.logger == "wandb":
         logger = WandbLogger(project=args.name)
         logger.watch(training_wrapper)
@@ -184,8 +192,8 @@ def main():
         accumulate_grad_batches=args.accum_batches,
         callbacks=[
             ckpt_callback,
-            demo_callback,
-            exc_callback,
+            # demo_callback,
+            # exc_callback,
             save_model_config_callback,
         ],
         logger=logger,
@@ -198,7 +206,7 @@ def main():
         **val_args,
     )
 
-    trainer.fit(hyperencoder, train_dl, ckpt_path=args.save_dir)
+    trainer.fit(model, train_dl, ckpt_path=args.save_dir)
 
 
 if __name__ == "__main__":

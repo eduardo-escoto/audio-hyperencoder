@@ -1,54 +1,91 @@
-from typing import Union
+from typing import Any
 
 from torch.nn import Module
-from stable_audio_tools.models.bottleneck import Bottleneck
-from stable_audio_tools.models.autoencoders import (
-    DecoderBlock,
-    EncoderBlock,
-    OobleckDecoder,
-    OobleckEncoder,
+from stable_audio_tools.models.models.autoencoders import (
+    create_decoder_from_config,
+    create_encoder_from_config,
+    create_bottleneck_from_config,
 )
 
 
 class HyperEncoder(Module):
     def __init__(
         self,
-        encoder: Union[EncoderBlock, OobleckEncoder],
-        decoder: Union[DecoderBlock, OobleckDecoder],
-        bottleneck: Bottleneck,
+        encoder,
+        decoder,
+        latent_dim,
+        input_channels,
+        output_channels,
+        bottleneck=None,
     ):
         super().__init__()
-        self.encoder: Union[EncoderBlock, OobleckEncoder] = encoder
-        self.decoder: Union[DecoderBlock, OobleckDecoder] = decoder
-        self.bottleneck: Bottleneck = bottleneck
 
-    def forward(self, x):
-        x = self.encode(x, return_info=True)
-        x = self.decode(x)
-        return x
+        self.encoder = encoder
+        self.decoder = decoder
+        self.latent_dim = latent_dim
+        self.bottleneck = bottleneck
+        self.input_channels = input_channels
+        self.output_channels = output_channels
 
-    def encode(self, x, return_info=False):
-        x = self.encoder(x)
-        x = self.bottleneck.encode(x)
-        return x
+    def encode(
+        self,
+        outer_latents,
+        skip_bottleneck: bool = False,
+        return_info: bool = False,
+        **kwargs,
+    ):
+        info = {}
 
-    def decode(self, x):
-        x = self.bottleneck.decode(x)
-        x = self.decoder(x)
-        return x
+        inner_latents = self.encoder(outer_latents)
+
+        info["pre_bottleneck_inner_latents"] = inner_latents
+
+        if self.bottleneck is not None and not skip_bottleneck:
+            inner_latents, bottleneck_info = self.bottleneck.encode(
+                inner_latents, return_info=True, **kwargs
+            )
+
+            info["post_bottleneck_inner_latents"] = inner_latents
+            info.update(bottleneck_info)
+
+        if return_info:
+            return inner_latents, info
+
+        return inner_latents
+
+    def decode(self, inner_latents, skip_bottleneck: bool = False, **kwargs):
+        latents = inner_latents
+
+        if self.bottleneck is not None and not skip_bottleneck:
+            latents = self.bottleneck.decode(latents)
+
+        outer_latents = self.decoder(latents, **kwargs)
+
+        return outer_latents
 
 
-# Load up PreEncodedDataset in the data module you made
-# see if the inputs look right
-# try the FSQ implementation after as well.
-# Will probably need to use a notbeook to understand how the
-# tensors work
+def create_hyperencoder_from_config(config: dict[str, Any]):
+    ae_config = config["model"]
 
-# real audio
-# audio to vae latent to hyperencoder latents and comparison
+    encoder = create_encoder_from_config(ae_config["encoder"])
+    decoder = create_decoder_from_config(ae_config["decoder"])
 
-# checkout demo callback -
-# gotta figure out their pre-encoding scheme.
-# reconstruction
-# hubert loss in the semantic losses
-# or l1
+    bottleneck_config = ae_config.get("bottleneck", None)
+
+    latent_dim = ae_config.get("latent_dim", None)
+    assert latent_dim is not None, "latent_dim must be specified in model config"
+
+    in_channels = ae_config.get("in_channels", None)
+    out_channels = ae_config.get("out_channels", None)
+
+    if bottleneck_config is not None:
+        bottleneck = create_bottleneck_from_config(bottleneck_config)
+
+    return HyperEncoder(
+        encoder,
+        decoder,
+        latent_dim=latent_dim,
+        bottleneck=bottleneck,
+        in_channels=in_channels,
+        out_channels=out_channels,
+    )
