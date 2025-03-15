@@ -1,4 +1,8 @@
-from .audio import AudioDataModule
-from .latent import LatentDataModule
+from .utils import create_datamodule_from_config
+from .latent import PreEncodedLatentDataset, PreEncodedLatentDataModule
 
-__all__ = ["AudioDataModule", "LatentDataModule"]
+__all__ = [
+    "PreEncodedLatentDataset",
+    "PreEncodedLatentDataModule",
+    create_datamodule_from_config,
+]

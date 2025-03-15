@@ -12,9 +12,8 @@ from lightning import Callback, LightningModule
 from torchaudio import save as ta_save
 from torch.nn.utils import clip_grad_norm_
 from safetensors.torch import save_model as st_save_model
-from models.hyperencoder import HyperEncoder
 from lightning.pytorch.utilities import rank_zero_only
-from stable_audio_open.training.utils import (
+from stable_audio_tools.training.utils import (
     log_audio,
     log_image,
     log_metric,
@@ -23,21 +22,41 @@ from stable_audio_open.training.utils import (
     create_optimizer_from_config,
     create_scheduler_from_config,
 )
-from stable_audio_open.interface.aeiou import (
+from stable_audio_tools.interface.aeiou import (
     audio_spectrogram_image,
     tokens_spectrogram_image,
 )
-from stable_audio_open.training.losses import (
+from stable_audio_tools.training.losses import (
     L1Loss,
     MSELoss,
-    Multiloss,
+    MultiLoss,
     HubertLoss,
     LossWithTarget,
 )
-from stable_audio_open.training.autoencoders import (
+from stable_audio_tools.training.autoencoders import (
     AudioAutoencoder,
     create_loss_modules_from_bottleneck,
 )
+
+from ..models.hyperencoder import HyperEncoder
+
+
+def create_he_training_wrapper_from_config(model_config, model):
+    model_type = model_config.get("model_type", None)
+    assert model_type is not None, "model_type must be specified in model config"
+
+    training_config = model_config.get("training", None)
+    assert training_config is not None, (
+        "training config must be specified in model config"
+    )
+
+    if model_type == "hyperencoder":
+        return HyperEncoderTrainingWrapper(
+            model,
+            loss_config=training_config.get("loss_configs", None),
+            optimizer_configs=training_config.get("optimizer_configs", None),
+            lr=training_config.get("learning_rate", None),
+        )
 
 
 class HyperEncoderTrainingWrapper(LightningModule):
@@ -66,6 +85,20 @@ class HyperEncoderTrainingWrapper(LightningModule):
             }
 
         self.optimizer_configs = optimizer_configs
+
+        if loss_config is None:
+            loss_config = {
+                "time": {
+                    "type": "time",
+                    "config": {},
+                    "weights": {
+                        "l1": 0.1,
+                        "l2": 0.1,
+                    },
+                },
+            }
+
+        self.loss_config = loss_config
 
         if "hubert" in loss_config:
             hubert_weight = loss_config["hubert"]["weights"]["hubert"]
@@ -117,7 +150,7 @@ class HyperEncoderTrainingWrapper(LightningModule):
                 self.hyperencoder.bottleneck, self.loss_config
             )
 
-        self.losses_gen = Multiloss(self.gen_loss_modules)
+        self.losses_gen = MultiLoss(self.gen_loss_modules)
         self.eval_losses = ModuleDict()
 
     def forward(self, outer_latents):
@@ -257,17 +290,16 @@ class AutoencoderDemoCallback(Callback):
         demo_dl,
         pre_trained_autoencoder: AudioAutoencoder,
         demo_every=2000,
-        sample_size=65536,
         sample_rate=44100,
         max_demos=8,
     ):
         super().__init__()
         self.demo_every = demo_every
-        self.demo_samples = sample_size
         self.demo_dl = iter(deepcopy(demo_dl))
         self.sample_rate = sample_rate
         self.last_demo_step = -1
         self.max_demos = max_demos
+        self.pre_trained_autoencoder = pre_trained_autoencoder
 
     @rank_zero_only
     def on_train_batch_end(self, trainer, module, outputs, batch, batch_idx):
@@ -292,51 +324,92 @@ class AutoencoderDemoCallback(Callback):
 
             demo_outer_latents = demo_outer_latents.to(module.device)
 
+            pt_ae_model = self.pre_trained_autoencoder.to(module.device)
             with no_grad():
                 inner_latents = module.hyperencoder.encode(encoder_input)
-            # reconstructed_outer_latents = module.hyperencoder.decode(inner_latents)
+                reconstructed_outer_latents = module.hyperencoder.decode(inner_latents)
+                reconstructed_audio = pt_ae_model.decode(reconstructed_outer_latents)
 
             # log_dict = {}
 
             # Interleave reals and fakes
-            reals_fakes = []
-            # reals_fakes = rearrange([demo_reals, fakes], "i b d n -> (b i) d n")
+            real_audio = info["trimmed_input_reals"]
+            decoded_audio = info["decoded_reals"]
+
+            reals_fakes_og = rearrange(
+                [real_audio, reconstructed_audio], "i b d n -> (b i) d n"
+            )
+            reals_fakes_recon = rearrange(
+                [decoded_audio, reconstructed_audio], "i b d n -> (b i) d n"
+            )
             # Put the demos together
-            reals_fakes = rearrange(reals_fakes, "b d n -> d (b n)")
+            reals_fakes_og = rearrange(reals_fakes_og, "b d n -> d (b n)")
+            reals_fakes_recon = rearrange(reals_fakes_recon, "b d n -> d (b n)")
 
             try:
+                direct_parent = info["root"].split("/")[-1]
+                prefix = info["prefix"]
                 data_dir = path.join(
                     trainer.logger.save_dir,
                     logger_project_name(trainer.logger),
                     trainer.logger.experiment.id,
                     "media",
+                    direct_parent,
+                    prefix,
                 )
                 makedirs(data_dir, exist_ok=True)
-                filename = path.join(data_dir, f"recon_{trainer.global_step:08}.wav")
-            except Exception:
+
+                def filename_gen(name, f_type):
+                    return path.join(
+                        data_dir, f"{name}_{trainer.global_step:08}.{f_type}"
+                    )
+
+                og_filename = filename_gen("inner_og_recon", "wav")
+                recon_filename = filename_gen("inner_outer_recon", "wav")
+
+            except Exception as e:
                 filename = f"recon_{trainer.global_step:08}.wav"
+                print(f"{filename}!:{type(e).__name__}: {e}")
+                raise e
 
-            reals_fakes = (
-                reals_fakes.to(torch_float32)
-                .clamp(-1, 1)
-                .mul(32767)
-                .to(torch_int16)
-                .cpu()
-            )
-            ta_save(filename, reals_fakes, self.sample_rate)
+            def save_audio(filename, audio, sample_rate):
+                audio = (
+                    audio.to(torch_float32)
+                    .clamp(-1, 1)
+                    .mul(32767)
+                    .to(torch_int16)
+                    .cpu()
+                )
+                ta_save(filename, audio, sample_rate)
 
-            log_audio(trainer.logger, "recon", filename, self.sample_rate)
-            log_point_cloud(trainer.logger, "embeddings_3dpca", inner_latents)
-            log_image(
-                trainer.logger,
-                "embeddings_spec",
-                tokens_spectrogram_image(inner_latents),
+            save_audio(og_filename, reals_fakes_og, self.sample_rate)
+            save_audio(recon_filename, reals_fakes_recon, self.sample_rate)
+
+            log_audio(trainer.logger, "inner_og_recon", og_filename, self.sample_rate)
+            log_audio(
+                trainer.logger, "inner_outer_recon", recon_filename, self.sample_rate
             )
-            log_image(
-                trainer.logger,
-                "recon_melspec_left",
-                audio_spectrogram_image(reals_fakes),
-            )
+
+            latent_outputs = [
+                ("inner_latents", inner_latents),
+                ("reconstructed_outer_latents", reconstructed_outer_latents),
+                ("real_outer_latents", demo_outer_latents),
+            ]
+
+            for out_name, out_tensor in latent_outputs:
+                log_point_cloud(
+                    trainer.logger, f"embeddings_3dpca_{out_name}", out_tensor
+                )
+                log_image(
+                    trainer.logger,
+                    f"embeddings_spec_{out_name}",
+                    tokens_spectrogram_image(out_tensor),
+                )
+                log_image(
+                    trainer.logger,
+                    f"recon_melspec_left_{out_name}",
+                    audio_spectrogram_image(out_tensor),
+                )
         except Exception as e:
             print(f"{type(e).__name__}: {e}")
             raise e

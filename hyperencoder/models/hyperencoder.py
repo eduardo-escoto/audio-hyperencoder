@@ -1,7 +1,7 @@
 from typing import Any
 
 from torch.nn import Module
-from stable_audio_tools.models.models.autoencoders import (
+from stable_audio_tools.models.autoencoders import (
     create_decoder_from_config,
     create_encoder_from_config,
     create_bottleneck_from_config,
@@ -86,6 +86,6 @@ def create_hyperencoder_from_config(config: dict[str, Any]):
         decoder,
         latent_dim=latent_dim,
         bottleneck=bottleneck,
-        in_channels=in_channels,
-        out_channels=out_channels,
+        input_channels=in_channels,
+        output_channels=out_channels,
     )

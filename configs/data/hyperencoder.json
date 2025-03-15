@@ -1,0 +1,13 @@
+{
+    "dataset_type": "latents_for_hyperencoder",
+    "split_type": "auto",
+    "loading_strategy": "lazy",
+    "train_split_pct": 0.8,
+    "val_split_pct": 0.1,
+    "test_split_pct": 0.1,
+    "datasets": [
+        {
+            "path": "/home/eduardo/Projects/pre_encode_audio/data/babyslakh"
+        }
+    ]
+}

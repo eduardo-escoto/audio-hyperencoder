@@ -57,6 +57,7 @@
         }
     },
     "demo": {
-        
+        "demo_every": 20,
+        "max_demos": 10
     }
 }

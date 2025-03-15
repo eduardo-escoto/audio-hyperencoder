@@ -219,9 +219,9 @@ class PreEncodedLatentDataModule(LightningDataModule):
     @staticmethod
     def from_single_dataset_splits(
         datadirs: list[str],
-        train_split: float = 0.7,
-        val_split: float = 0.2,
-        test_split: float = 0.1,
+        train_split_pct: float = 0.7,
+        val_split_pct: float = 0.2,
+        test_split_pct: float = 0.1,
         random_seed: int = 42,
         batch_size: int = 32,
         num_workers: int = 4,
@@ -232,9 +232,9 @@ class PreEncodedLatentDataModule(LightningDataModule):
         train_tuples, val_tuples, test_tuples = random_split(
             latents_tuples,
             [
-                int(len(latents_tuples) * train_split),
-                int(len(latents_tuples) * val_split),
-                int(len(latents_tuples) * test_split),
+                int(len(latents_tuples) * train_split_pct),
+                int(len(latents_tuples) * val_split_pct),
+                int(len(latents_tuples) * test_split_pct),
             ],
             generator=Generator().manual_seed(random_seed),
         )

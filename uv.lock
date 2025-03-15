@@ -4449,7 +4449,7 @@ wheels = [
 
 [[package]]
 name = "stable-audio-tools"
-version = "0.0.17"
+version = "0.0.18"
 source = { editable = "stable-audio-tools" }
 dependencies = [
     { name = "alias-free-torch" },
@@ -4467,7 +4467,6 @@ dependencies = [
     { name = "local-attention" },
     { name = "pandas" },
     { name = "prefigure" },
-    { name = "pypesq" },
     { name = "pytorch-lightning" },
     { name = "pywavelets" },
     { name = "safetensors" },
@@ -4503,7 +4502,6 @@ requires-dist = [
     { name = "local-attention", specifier = "==1.8.6" },
     { name = "pandas", specifier = "==2.0.2" },
     { name = "prefigure", specifier = "==0.0.9" },
-    { name = "pypesq", specifier = "==1.2.4" },
     { name = "pytorch-lightning", specifier = "==2.1.0" },
     { name = "pywavelets", specifier = "==1.4.1" },
     { name = "safetensors" },
