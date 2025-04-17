@@ -1,10 +1,14 @@
+import os
+import time  # Import time for delay
+import logging
 from os import walk
 from enum import Enum
 from typing import Optional
 from collections import defaultdict
 from dataclasses import dataclass
 
-from torch import Generator
+from numpy import ceil, floor
+from torch import Generator, stack, squeeze
 from lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader, random_split
 from safetensors.torch import load_file
@@ -94,6 +98,8 @@ class PreEncodedLatentDataset(Dataset):
         prefix_filter: Optional[str] = None,
         suffix_mapping: Optional[dict[str, str]] = None,
     ):
+        logger = logging.getLogger()  # Use the existing logger
+
         if suffix_mapping is None:
             suffix_mapping = DEFAULT_SUFFIX_MAPPING
 
@@ -118,41 +124,71 @@ class PreEncodedLatentDataset(Dataset):
 
         for root, dir_dict in files_dicts.items():
             for pref, suff_dict in dir_dict.items():
-                out_tuple = (
-                    f"{root}/{suff_dict['latents']}",
-                    EncodedDirectoryInfo(**{"root": root, "prefix": pref, **suff_dict}),
-                )
+                latents_path = os.path.join(root, suff_dict.get("latents", ""))
+                if not os.path.exists(latents_path):
+                    logger.warning(f"Latents file not found: {latents_path}. Skipping.")
+                    continue
 
-                if prefix_filter is not None:
-                    if prefix_filter_re.match(pref):
-                        tuples.append(out_tuple)
+                try:
+                    out_tuple = (
+                        latents_path,
+                        EncodedDirectoryInfo(
+                            **{"root": root, "prefix": pref, **suff_dict}
+                        ),
+                    )
+                    if prefix_filter is not None:
+                        if prefix_filter_re.match(pref):
+                            tuples.append(out_tuple)
                     else:
-                        continue
-                else:
-                    tuples.append(out_tuple)
+                        tuples.append(out_tuple)
+                except KeyError as e:
+                    warn_msg =  f"""Missing expected key in suffix mapping: {e}. 
+Skipping {latents_path}."""
+                    logger.warning(warn_msg)
+                    continue
 
         return tuples
-
-    def __len__(self):
-        return len(self.file_tuples)
 
     @staticmethod
     def load_all(tuples):
         latent_dict = {}
         for idx in range(len(tuples)):
             latent, path, info = PreEncodedLatentDataset.load_item(tuples[idx])
-            latent_dict[path] = {"latents": latent, "info": info}
+            latent_dict[path] = (latent, info)
         return latent_dict
 
     @staticmethod
     def load_item(latent_tuple):
+        logger = logging.getLogger()  # Use the existing logger
+
         latents_path, info = latent_tuple
-        latents_sf = load_file(latents_path)
+        # if not os.path.exists(latents_path):
+        #     logger.warning(f"File not found during loading: {latents_path}. Skipping.")
+        #     return None, latents_path, info
 
-        latents = latents_sf["latents"]
-        info = {**info, **latents_sf}
+        retries = 20  # Number of retry attempts
+        delay_seconds = 5  # Delay between retries
 
-        return latents, latents_path, info
+        for attempt in range(1, retries + 1):
+            try:
+                latents_sf = load_file(latents_path)
+                latents = latents_sf["latents"]
+                info = {**info.__dict__, **latents_sf}
+                return latents, latents_path, info
+            except Exception as e:
+                logger.error(
+                    f"Error loading file {latents_path} (attempt {attempt}/{retries}): {e}"
+                )
+                if attempt < retries:
+                    time.sleep(delay_seconds)  # Delay before retrying
+                else:
+                    logger.error(
+                        f"Failed to load file {latents_path} after {retries} attempts. Skipping."
+                    )
+                    return None, latents_path, info
+
+    def __len__(self):
+        return len(self.file_tuples)
 
     def __getitem__(self, idx):
         if self.loading_strategy == LatentLoadStrategy.EAGER:
@@ -167,7 +203,7 @@ class PreEncodedLatentDataset(Dataset):
                 return self.latent_dict[latent_path]
             else:
                 latents, path, info = self.load_item(self.file_tuples[idx])
-                self.latent_dict[path] = {"latents": latents, "info": info}
+                self.latent_dict[path] = (latents, info)
                 return self.latent_dict[path]
 
 
@@ -181,6 +217,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
         batch_size: int = 32,
         num_workers: int = 4,
+        persistent_workers=True,
     ):
         super().__init__()
         self.train_tuples = train_tuples
@@ -190,6 +227,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         self.loading_strategy = loading_strategy
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.persistent_workers = persistent_workers
 
     @staticmethod
     def from_dirs_per_dataset(
@@ -200,6 +238,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
+        persistent_workers=True,
     ):
         train_tuples = PreEncodedLatentDataset.collect_file_path_tuples(train_dirs)
         val_tuples = PreEncodedLatentDataset.collect_file_path_tuples(val_dirs)
@@ -214,6 +253,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
             loading_strategy=loading_strategy,
             batch_size=batch_size,
             num_workers=num_workers,
+            persistent_workers=persistent_workers,
         )
 
     @staticmethod
@@ -226,15 +266,19 @@ class PreEncodedLatentDataModule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
+        persistent_workers=True,
     ):
         latents_tuples = PreEncodedLatentDataset.collect_file_path_tuples(datadirs)
-
+        logs = logging.getLogger()
+        logs.info(
+            f"{int(ceil(len(latents_tuples) * train_split_pct))}, {int(floor(len(latents_tuples) * val_split_pct))}, {int(floor(len(latents_tuples) * test_split_pct))}, {len(latents_tuples)}"
+        )
         train_tuples, val_tuples, test_tuples = random_split(
             latents_tuples,
             [
-                int(len(latents_tuples) * train_split_pct),
-                int(len(latents_tuples) * val_split_pct),
-                int(len(latents_tuples) * test_split_pct),
+                int(ceil(len(latents_tuples) * train_split_pct)),
+                int(ceil(len(latents_tuples) * val_split_pct)),
+                int(floor(len(latents_tuples) * test_split_pct)),
             ],
             generator=Generator().manual_seed(random_seed),
         )
@@ -247,6 +291,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
             loading_strategy=loading_strategy,
             batch_size=batch_size,
             num_workers=num_workers,
+            persistent_workers=persistent_workers,
         )
 
     def setup(self, stage: Optional[str] = None):
@@ -270,22 +315,45 @@ class PreEncodedLatentDataModule(LightningDataModule):
                 self.predict_tuples, loading_strategy=self.loading_strategy
             )
 
+    def get_collate_fn(self):
+        def custom_collate_fn(batch):
+            latents = [
+                squeeze(item[0]) if item[0].dim() == 3 else item[0] for item in batch
+            ]
+            stacked_latents = stack(latents)
+
+            infos = [item[1] for item in batch]
+
+            return stacked_latents, infos
+
+        return custom_collate_fn
+
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=True,
+            collate_fn=self.get_collate_fn(),
+            persistent_workers=self.persistent_workers,
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.val_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            collate_fn=self.get_collate_fn(),
+            persistent_workers=self.persistent_workers,
         )
 
     def test_dataloader(self):
         return DataLoader(
-            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.test_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            collate_fn=self.get_collate_fn(),
+            persistent_workers=self.persistent_workers,
         )
 
     def predict_dataloader(self):
@@ -293,4 +361,6 @@ class PreEncodedLatentDataModule(LightningDataModule):
             self.predict_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
+            collate_fn=self.get_collate_fn(),
+            persistent_workers=self.persistent_workers,
         )

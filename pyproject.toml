@@ -24,6 +24,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "colorlog>=6.9.0",
     "ipykernel>=6.29.5",
     "jupyter>=1.1.1",
     "pre-commit>=4.1.0",

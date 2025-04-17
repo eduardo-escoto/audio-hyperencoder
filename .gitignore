@@ -185,3 +185,4 @@ pretransform.safetensors
 /sPDMX_Mount
 /.venv
 /checkpoints
+/local_data

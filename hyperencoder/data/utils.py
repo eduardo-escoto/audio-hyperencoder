@@ -4,9 +4,25 @@ from collections import defaultdict
 from collections.abc import Generator
 
 from regex import Pattern
+from torch import Tensor, stack, squeeze
 from lightning import LightningDataModule
 
 from .latent import LatentLoadStrategy, PreEncodedLatentDataModule
+
+
+def collate_dicts(dicts: list[dict]):
+    dict_types = {key: type(value) for key, value in dicts[0].items()}
+    out_dict = {}
+    for key, t in dict_types.items():
+        collated = [
+            squeeze(dict_item[key]) if t is Tensor else dict_item[key]
+            for dict_item in dicts
+        ]
+        if t is Tensor:
+            collated = stack(collated)
+        out_dict[key] = collated
+
+    return out_dict
 
 
 def get_file_paths_by_pattern(
@@ -38,6 +54,7 @@ def create_datamodule_from_config(
     num_workers=4,
     random_seed=42,
     loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
+    persistent_workers=True,
 ) -> LightningDataModule:
     dataset_type = dataset_config.get("dataset_type", "latents_for_hyperencoder")
     split_type = dataset_config.get(
@@ -85,6 +102,7 @@ def create_datamodule_from_config(
                 num_workers=num_workers,
                 random_seed=random_seed,
                 loading_strategy=loading_strategy,
+                persistent_workers=persistent_workers,
                 **split_pcts,
             )
         elif split_type == "manual":
@@ -96,6 +114,7 @@ def create_datamodule_from_config(
                 batch_size=batch_size,
                 num_workers=num_workers,
                 loading_strategy=loading_strategy,
+                persistent_workers=persistent_workers,
             )
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")

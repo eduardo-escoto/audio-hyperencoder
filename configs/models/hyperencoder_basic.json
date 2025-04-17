@@ -25,10 +25,7 @@
             }
         },
         "bottleneck": {
-            "type": "fsq",
-            "config": {
-                "levels": [8, 5, 5, 5]
-            }
+            "type": "vae"
         },
         "latent_dim": 4,
         "in_channels": 64,
