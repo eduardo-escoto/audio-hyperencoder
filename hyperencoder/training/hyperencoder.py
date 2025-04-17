@@ -40,9 +40,9 @@ def create_he_training_wrapper_from_config(model_config, model):
     assert model_type is not None, "model_type must be specified in model config"
 
     training_config = model_config.get("training", None)
-    assert (
-        training_config is not None
-    ), "training config must be specified in model config"
+    assert training_config is not None, (
+        "training config must be specified in model config"
+    )
 
     if model_type == "hyperencoder":
         return HyperEncoderTrainingWrapper(

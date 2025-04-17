@@ -142,7 +142,7 @@ class PreEncodedLatentDataset(Dataset):
                     else:
                         tuples.append(out_tuple)
                 except KeyError as e:
-                    warn_msg =  f"""Missing expected key in suffix mapping: {e}. 
+                    warn_msg = f"""Missing expected key in suffix mapping: {e}. 
 Skipping {latents_path}."""
                     logger.warning(warn_msg)
                     continue
@@ -163,7 +163,9 @@ Skipping {latents_path}."""
 
         latents_path, info = latent_tuple
         # if not os.path.exists(latents_path):
-        #     logger.warning(f"File not found during loading: {latents_path}. Skipping.")
+        #     logger.warning(
+        # f"File not found during loading: {latents_path}. Skipping."
+        #)
         #     return None, latents_path, info
 
         retries = 20  # Number of retry attempts
