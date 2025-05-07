@@ -3,7 +3,7 @@
     "datasets": [
         {
             "id": "pre_encoded_babyslakh",
-            "path": "/home/eduardo/Projects/pre_encode_audio/data"
+            "path": "/home/eduardo/Projects/audio-hyperencoder/data"
         }
     ],
     "random_crop": true,

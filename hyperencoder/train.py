@@ -162,9 +162,8 @@ def main():
         dataset_config,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
-        # num_workers=0,
         random_seed=args.seed,
-        persistent_workers=True,
+        persistent_workers=args.persistent_workers,
     )
     training_logger.info("Setting up the validation fold for demos")
     pre_enc_datamodule.setup("validate")
@@ -210,8 +209,8 @@ def main():
     demo_callback = AutoencoderDemoCallback(
         pre_enc_datamodule.val_dataloader(),
         pre_trained_model.pretransform,
-        demo_every=model_config.get("demo_every", 10),
-        max_demos=model_config.get("max_demos", 10),
+        demo_every=model_config['demo'].get("demo_every", 10),
+        max_demos=model_config['demo'].get("max_demos", 10),
     )
 
     if args.logger == "wandb":
@@ -248,7 +247,7 @@ def main():
     )
 
     trainer = Trainer(
-        devices="auto",
+        devices=args.devices,
         accelerator="gpu",
         num_nodes=args.num_nodes,
         strategy=strategy,

@@ -1,7 +1,0 @@
-{
-    "search.exclude" : {
-      "**/data/":true,
-      "**/checkpoints/":true,
-      "**/.venv": true,
-    }
-  }

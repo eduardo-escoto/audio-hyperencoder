@@ -7,7 +7,7 @@
     "test_split_pct": 0.1,
     "datasets": [
         {
-            "path": "/home/eduardo/Projects/pre_encode_audio/data/pre_encoded_babyslakh"
+            "path": "/deepfreeze/share_read_only/eduardo/pre_encoded_audio/pre_encoded_sPDMX/data"
         }
     ]
 }

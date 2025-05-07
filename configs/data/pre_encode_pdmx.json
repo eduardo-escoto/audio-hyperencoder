@@ -3,7 +3,7 @@
     "datasets": [
         {
             "id": "sPDMX",
-            "path": "/home/eduardo/Projects/pre_encode_audio/sPDMX_Mount"
+            "path": "/home/eduardo/Projects/audio-hyperencoder/sPDMX_Mount"
         }
     ],
     "random_crop": true

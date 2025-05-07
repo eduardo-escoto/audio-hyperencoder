@@ -7,7 +7,7 @@
     "test_split_pct": 0.1,
     "datasets": [
         {
-            "path": "/home/eduardo/Projects/pre_encode_audio/data/sPDMX_pre_encode_rerun/"
+            "path": "/home/eduardo/Projects/audio-hyperencoder/data/sPDMX_pre_encode_rerun/"
         }
     ]
 }
