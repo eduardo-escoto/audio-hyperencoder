@@ -13,6 +13,8 @@ from stable_audio_tools import get_pretrained_model
 from torch.multiprocessing import set_sharing_strategy
 from lightning.pytorch.loggers import CometLogger, WandbLogger
 from lightning.pytorch.callbacks import Callback, ModelCheckpoint, RichProgressBar
+from stable_audio_tools.models.utils import load_ckpt_state_dict
+from stable_audio_tools.training.utils import copy_state_dict
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 
 from .data import create_datamodule_from_config
@@ -188,13 +190,18 @@ def main():
         strategy = "ddp_find_unused_parameters_true" if args.num_gpus > 1 else "auto"
     training_logger.info("Loading Hyperencoder")
     model = create_hyperencoder_from_config(model_config)
+
+    if args.pretrained_ckpt_path:
+        training_logger.info("LOADING FROM CHECKPOINT!!")
+        copy_state_dict(model, load_ckpt_state_dict(args.pretrained_ckpt_path))
+
     training_wrapper = create_he_training_wrapper_from_config(model_config, model)
     training_logger.info("Loaded Hyperencoder")
     if args.logger == "wandb":
         logger.watch(training_wrapper)
 
     ckpt_callback = ModelCheckpoint(
-        every_n_train_steps=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=-1
+        every_n_train_steps=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=args.save_top_k, monitor="train/kl_loss"
     )
     save_model_config_callback = ModelConfigEmbedderCallback(model_config)
 

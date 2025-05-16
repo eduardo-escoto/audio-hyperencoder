@@ -6,7 +6,7 @@
             "config": {
                 "in_channels": 64,
                 "channels": 8,
-                "latent_dim": 8,
+                "latent_dim": 16,
                 "c_mults": [1, 2, 4, 8, 16],
                 "strides": [2, 4, 4, 4, 8],
                 "use_snake": true
@@ -27,7 +27,7 @@
         "bottleneck": {
             "type": "vae"
         },
-        "latent_dim": 4,
+        "latent_dim": 16,
         "in_channels": 64,
         "out_channels": 64
     },
