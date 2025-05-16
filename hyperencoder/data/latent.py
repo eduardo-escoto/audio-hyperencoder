@@ -41,8 +41,8 @@ class EncodedDirectoryInfo:
     prefix: str
     latents: str
     pre_encode_config: str
-    reconstructed_audio: str
-    original_audio: str
+    # reconstructed_audio: str
+    # original_audio: str
 
 
 """
@@ -272,6 +272,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
     ):
         latents_tuples = PreEncodedLatentDataset.collect_file_path_tuples(datadirs)
         logs = logging.getLogger()
+        logs.info(f'Gathering data from: {",".join(datadirs)}')
         logs.info(
             f"{int(ceil(len(latents_tuples) * train_split_pct))}, {int(floor(len(latents_tuples) * val_split_pct))}, {int(floor(len(latents_tuples) * test_split_pct))}, {len(latents_tuples)}"
         )

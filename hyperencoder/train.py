@@ -101,12 +101,13 @@ def main():
             (module_base_path / "./defaults/train_defaults.ini").resolve()
         )
     )
+    print(args.run_name)
     seed = args.seed
 
     # Initialize the wandb or comet logger first to get the experiment ID
     if args.logger == "wandb":
         logger = WandbLogger(
-            project=args.project, name=args.name, save_dir=args.save_dir
+            project=args.project, name=args.run_name, save_dir=args.save_dir
         )
         # logger.watch(None)  # Watch can be updated later when the model is created
 
@@ -127,7 +128,7 @@ def main():
             checkpoint_dir = None
             log_dir = args.save_dir
     elif args.logger == "comet":
-        logger = CometLogger(project_name=args.name)
+        logger = CometLogger(project_name=args.run_name)
         checkpoint_dir = args.save_dir if args.save_dir else None
         log_dir = args.save_dir
     else:

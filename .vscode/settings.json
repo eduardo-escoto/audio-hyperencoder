@@ -1,7 +1,7 @@
-{
-    "search.exclude" : {
-      "**/data/":true,
-      "**/checkpoints/":true,
-      "**/.venv": true,
-    }
-  }
+// {
+    // "search.exclude" : {
+      // "**/data/":true,
+      // "**/checkpoints/":true,
+      // "**/.venv": true,
+    // }
+  // }
