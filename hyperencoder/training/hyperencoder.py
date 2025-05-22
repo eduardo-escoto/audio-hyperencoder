@@ -1,4 +1,5 @@
 import logging
+from json import dump
 from os import path, makedirs
 from copy import deepcopy
 from typing import Optional
@@ -290,8 +291,10 @@ class AutoencoderDemoCallback(Callback):
         max_demos=8,
     ):
         super().__init__()
+        from itertools import cycle
+
         self.demo_every = demo_every
-        self.demo_dl = iter(deepcopy(demo_dl))
+        self.demo_dl = cycle(deepcopy(demo_dl))
         self.sample_rate = sample_rate
         self.last_demo_step = -1
         self.max_demos = max_demos
@@ -320,7 +323,13 @@ class AutoencoderDemoCallback(Callback):
 
         try:
             demo_outer_latents, info = next(self.demo_dl)
+        except StopIteration:
+            log.debug("Caught StopIteration on the Demo DataLoader, seems we're still running into stale dataloader issue.")
+            demo_outer_latents = None
+            # enumerate(self.demo_dl)
+            # demo_outer_latents, info = next(self.demo_dl)
 
+        try:
             # Limit the number of demo samples
             if demo_outer_latents.shape[0] > self.max_demos:
                 demo_outer_latents = demo_outer_latents[: self.max_demos, ...]
@@ -346,8 +355,16 @@ class AutoencoderDemoCallback(Callback):
                 reconstructed_outer_latents = module.hyperencoder.decode(inner_latents)
                 reconstructed_audio = pt_ae_model.decode(reconstructed_outer_latents)
 
-            real_audio = info["trimmed_input_reals"].to(module.device)
-            decoded_audio = info["decoded_reals"].to(module.device)
+            reals_key = None
+            if "cropped_reals" in info:
+                reals_key = "cropped_reals"
+                decoded_reals_key = "cropped_decoded_reals"
+            else:
+                reals_key = "trimmed_input_reals"
+                decoded_reals_key = "decoded_reals"
+            
+            real_audio = info[reals_key].to(module.device)
+            decoded_audio = info[decoded_reals_key].to(module.device)
 
             out_dict = {
                 "demo_encoded_pre_bottleneck_latents": inner_info[
@@ -360,7 +377,12 @@ class AutoencoderDemoCallback(Callback):
                 "demo_reconstructed_outer_latents": reconstructed_outer_latents.contiguous().cpu(),
                 "original_audio": real_audio.contiguous().cpu(),
                 "sao_reconstructed_audio": decoded_audio.contiguous().cpu(),
-                "hyperencoder_reconstructed_audio": reconstructed_audio.contiguous().cpu(),
+                "hyperencoder_reconstructed_audio": reconstructed_audio.contiguous().cpu()
+            }
+
+            out_infos = {
+                "crop_start_pcts": info["crop_start_pct"],
+                "crop_end_pcts": info["crop_end_pct"],
             }
 
             dict_data_path = path.join(
@@ -380,6 +402,15 @@ class AutoencoderDemoCallback(Callback):
                 ),
             )
 
+            with open(path.join(
+                    dict_data_path, f"demo_infos_{trainer.global_step:08}.json"
+                ), "w") as info_file:
+                dump(
+                    out_infos,
+                    info_file
+                )
+            
+
             log.debug(
                 f"Saved demo dictionary to {path.join(dict_data_path, f'demo_dict_{trainer.global_step:08}.safetensors')}"
             )
@@ -397,16 +428,28 @@ class AutoencoderDemoCallback(Callback):
                         prefix,
                     )
                     makedirs(data_dir, exist_ok=True)
-
+                
                     def filename_gen(name, f_type, p):
                         return path.join(p, f"{name}_{trainer.global_step:08}.{f_type}")
 
-                    og_filename = filename_gen("real_audio", "wav", data_dir)
+
+                    og_pref = "real_audio"
+                    pt_recon_pref = "pre_trained_ae_recon"
+                    he_recon_pref = "hyperencoder_recon"
+                    if "cropped_reals" in info:
+                        crop_start_pct = info["crop_start_pct"][i] 
+                        crop_end_pct = info["crop_end_pct"][i]
+
+                        og_pref += f"crop_{crop_start_pct}_{crop_end_pct}"
+                        pt_recon_pref += f"crop_{crop_start_pct}_{crop_end_pct}"
+                        he_recon_pref += f"crop_{crop_start_pct}_{crop_end_pct}"
+
+                    og_filename = filename_gen(og_pref, "wav", data_dir)
                     pt_recon_filename = filename_gen(
-                        "pre_trained_ae_recon", "wav", data_dir
+                        pt_recon_pref, "wav", data_dir
                     )
                     hyper_recon_filename = filename_gen(
-                        "hyperencoder_recon", "wav", data_dir
+                        he_recon_pref, "wav", data_dir
                     )
 
                     def save_audio(filename, audio, sample_rate):

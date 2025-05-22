@@ -160,12 +160,13 @@ def main():
     with open(args.dataset_config) as f:
         dataset_config = json.load(f)
     training_logger.info("Creating the pre_encoded data module")
+    training_logger.info(f"persistent workers: {args.persistent_workers}, {bool(args.persistent_workers)}")
     pre_enc_datamodule = create_datamodule_from_config(
         dataset_config,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         random_seed=args.seed,
-        persistent_workers=args.persistent_workers,
+        persistent_workers=bool(args.persistent_workers),
     )
     training_logger.info("Setting up the validation fold for demos")
     pre_enc_datamodule.setup("validate")
@@ -201,7 +202,7 @@ def main():
         logger.watch(training_wrapper)
 
     ckpt_callback = ModelCheckpoint(
-        every_n_train_steps=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=args.save_top_k, monitor="train/kl_loss"
+        every_n_epochs=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=args.save_top_k, monitor="train/loss"
     )
     save_model_config_callback = ModelConfigEmbedderCallback(model_config)
 

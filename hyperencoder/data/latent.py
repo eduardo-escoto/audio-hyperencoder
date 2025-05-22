@@ -1,5 +1,6 @@
 import os
-import time  # Import time for delay
+# import time  # Import time for delay
+import random
 import logging
 from os import walk
 from enum import Enum
@@ -8,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from numpy import ceil, floor
-from torch import Generator, stack, squeeze
+from torch import Tensor, Generator, stack, squeeze
 from lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader, random_split
 from safetensors.torch import load_file
@@ -35,6 +36,67 @@ class LatentLoadStrategy(Enum):
     LAZY_CACHED = "lazy_cached"
 
 
+def create_random_cropper(crop_length, crop_ratio):
+    # log = logging.getLogger()
+    def random_cropper(latents, infos):
+        # crop length is in seconds
+        chunk_pct =  1 / crop_ratio
+        start_pct = random.uniform(0, 1.0 - chunk_pct)
+        end_pct = start_pct + chunk_pct
+        # log.info(f"Start pct is: {start_pct}")
+        
+        latent_length = latents.shape[-1]
+        latent_crop_start = int(round(latent_length * start_pct))
+        latent_crop_length = int(round(latent_length * chunk_pct))
+
+        # log.info(f"Latent Shape: {latents.shape}")
+        # log.info(f"Crop Length is: {latent_crop_length}")
+        # log.info(f"Crop Interval is: {latent_crop_start} to {(latent_crop_start + latent_crop_length)}")
+        
+        cropped_latents = latents[:, :, latent_crop_start:(latent_crop_start + latent_crop_length)].clone()
+
+        reals = infos['trimmed_input_reals']
+        decoded_reals = infos["decoded_reals"]
+
+        real_length = reals.shape[-1]
+        real_crop_start = int(round(real_length * start_pct))
+        real_crop_length = int(round(real_length * chunk_pct))
+        
+        cropped_reals = reals[:, :, real_crop_start:(real_crop_start + real_crop_length)].clone()
+        cropped_decoded_reals = decoded_reals[:, :, real_crop_start:(real_crop_start + real_crop_length)].clone()
+
+        # crop_length = floor(latent_length / crop_ratio)
+        # rand_start = random.randint(0, latent_length - crop_length - 1)
+
+        
+        # log.info(f"Info Members: {list(infos.keys())}")
+
+        new_infos = {
+            "root": infos["root"],
+            "prefix": infos["prefix"],
+            "crop_start_pct": round(number = start_pct, ndigits = 4),
+            "crop_end_pct": round(number=end_pct, ndigits = 4),
+            "crop_latent_start": latent_crop_start,
+            "crop_latent_length": latent_crop_length,
+            "crop_real_start": real_crop_start, 
+            "crop_real_length": real_crop_length, 
+            "cropped_reals": cropped_reals,
+            "cropped_decoded_reals": cropped_decoded_reals
+        }
+    
+        return cropped_latents, new_infos
+        
+    return random_cropper
+
+
+def get_cropper_from_config(crop_config):
+    if crop_config['random_crop']:
+        return create_random_cropper(crop_config['original_crop_length'], crop_config['crop_ratio'])
+    else:
+        raise NotImplementedError()
+
+
+
 @dataclass(frozen=True)
 class EncodedDirectoryInfo:
     root: str
@@ -58,10 +120,15 @@ class PreEncodedLatentDataset(Dataset):
         self,
         file_tuples: list[tuple[str, EncodedDirectoryInfo]],
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
+        crop_config = None
     ):
         self.file_tuples = file_tuples
         self.loading_strategy = loading_strategy
         self.latent_dict = {}
+
+        self.cropper = None
+        if crop_config is not None:
+            self.cropper = get_cropper_from_config(crop_config)
 
         if loading_strategy == LatentLoadStrategy.EAGER:
             self.latent_dict = self.load_all(file_tuples)
@@ -99,10 +166,10 @@ class PreEncodedLatentDataset(Dataset):
         suffix_mapping: Optional[dict[str, str]] = None,
     ):
         logger = logging.getLogger()  # Use the existing logger
+        prefix_filter_re = None
 
         if suffix_mapping is None:
             suffix_mapping = DEFAULT_SUFFIX_MAPPING
-
         if prefix_filter is not None:
             from re import compile
 
@@ -136,7 +203,7 @@ class PreEncodedLatentDataset(Dataset):
                             **{"root": root, "prefix": pref, **suff_dict}
                         ),
                     )
-                    if prefix_filter is not None:
+                    if prefix_filter_re is not None:
                         if prefix_filter_re.match(pref):
                             tuples.append(out_tuple)
                     else:
@@ -158,36 +225,42 @@ Skipping {latents_path}."""
         return latent_dict
 
     @staticmethod
-    def load_item(latent_tuple):
-        logger = logging.getLogger()  # Use the existing logger
+    def load_item(latent_tuple: tuple[str, dict]) -> tuple[Tensor, str, dict]:
+        # logger = logging.getLogger()  # Use the existing logger
 
         latents_path, info = latent_tuple
+
+        latents_sf = load_file(latents_path)
+        latents = latents_sf["latents"]
+        info = {**info.__dict__, **latents_sf}
+        return latents, latents_path, info
+
         # if not os.path.exists(latents_path):
         #     logger.warning(
         # f"File not found during loading: {latents_path}. Skipping."
         #)
         #     return None, latents_path, info
 
-        retries = 20  # Number of retry attempts
-        delay_seconds = 5  # Delay between retries
+        # retries = 20  # Number of retry attempts
+        # delay_seconds = 5  # Delay between retries
 
-        for attempt in range(1, retries + 1):
-            try:
-                latents_sf = load_file(latents_path)
-                latents = latents_sf["latents"]
-                info = {**info.__dict__, **latents_sf}
-                return latents, latents_path, info
-            except Exception as e:
-                logger.error(
-                    f"Error loading file {latents_path} (attempt {attempt}/{retries}): {e}"
-                )
-                if attempt < retries:
-                    time.sleep(delay_seconds)  # Delay before retrying
-                else:
-                    logger.error(
-                        f"Failed to load file {latents_path} after {retries} attempts. Skipping."
-                    )
-                    return None, latents_path, info
+        # for attempt in range(1, retries + 1):
+        #     try:
+        #         latents_sf = load_file(latents_path)
+        #         latents = latents_sf["latents"]
+        #         info = {**info.__dict__, **latents_sf}
+        #         return latents, latents_path, info
+        #     except Exception as e:
+        #         logger.error(
+        #             f"Error loading file {latents_path} (attempt {attempt}/{retries}): {e}"
+        #         )
+        #         if attempt < retries:
+        #             time.sleep(delay_seconds)  # Delay before retrying
+        #         else:
+        #             logger.error(
+        #                 f"Failed to load file {latents_path} after {retries} attempts. Skipping."
+        #             )
+        #             raise FileNotFoundError()
 
     def __len__(self):
         return len(self.file_tuples)
@@ -195,18 +268,26 @@ Skipping {latents_path}."""
     def __getitem__(self, idx):
         if self.loading_strategy == LatentLoadStrategy.EAGER:
             latent_path, info = self.file_tuples[idx]
-            return self.latent_dict[latent_path]
+            latents, info = self.latent_dict[latent_path]
         elif self.loading_strategy == LatentLoadStrategy.LAZY:
             latents, path, info = self.load_item(self.file_tuples[idx])
-            return latents, info
         elif self.loading_strategy == LatentLoadStrategy.LAZY_CACHED:
             latent_path, info = self.file_tuples[idx]
             if latent_path in self.latent_dict:
-                return self.latent_dict[latent_path]
+                latents, info = self.latent_dict[latent_path]
             else:
                 latents, path, info = self.load_item(self.file_tuples[idx])
                 self.latent_dict[path] = (latents, info)
-                return self.latent_dict[path]
+        else:
+            raise NotImplementedError()
+        # log = logging.getLogger()
+        # log.info(f"Cropper: {self.cropper is not None}")
+        
+        if self.cropper is not None:
+            # get a crop of a certain length, and safe start, end, and length in infos
+            latents, info = self.cropper(latents, info)
+
+        return latents, info
 
 
 class PreEncodedLatentDataModule(LightningDataModule):
@@ -220,6 +301,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         persistent_workers=True,
+        crop_config=None
     ):
         super().__init__()
         self.train_tuples = train_tuples
@@ -230,6 +312,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
+        self.crop_config = crop_config
 
     @staticmethod
     def from_dirs_per_dataset(
@@ -241,6 +324,7 @@ class PreEncodedLatentDataModule(LightningDataModule):
         num_workers: int = 4,
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
         persistent_workers=True,
+        crop_config = None,
     ):
         train_tuples = PreEncodedLatentDataset.collect_file_path_tuples(train_dirs)
         val_tuples = PreEncodedLatentDataset.collect_file_path_tuples(val_dirs)
@@ -256,11 +340,12 @@ class PreEncodedLatentDataModule(LightningDataModule):
             batch_size=batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
+            crop_config = crop_config
         )
 
     @staticmethod
     def from_single_dataset_splits(
-        datadirs: list[str],
+        datadir_configs: list[dict],
         train_split_pct: float = 0.7,
         val_split_pct: float = 0.2,
         test_split_pct: float = 0.1,
@@ -269,8 +354,10 @@ class PreEncodedLatentDataModule(LightningDataModule):
         num_workers: int = 4,
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
         persistent_workers=True,
+        crop_config = None,
     ):
-        latents_tuples = PreEncodedLatentDataset.collect_file_path_tuples(datadirs)
+        dir_paths = [config['path'] for config in datadir_configs]
+        latents_tuples = PreEncodedLatentDataset.collect_file_path_tuples(dir_paths)
         logs = logging.getLogger()
         logs.info(
             f"{int(ceil(len(latents_tuples) * train_split_pct))}, {int(floor(len(latents_tuples) * val_split_pct))}, {int(floor(len(latents_tuples) * test_split_pct))}, {len(latents_tuples)}"
@@ -294,27 +381,28 @@ class PreEncodedLatentDataModule(LightningDataModule):
             batch_size=batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
+            crop_config=crop_config
         )
 
     def setup(self, stage: Optional[str] = None):
         if stage == "fit":
             self.train_dataset = PreEncodedLatentDataset(
-                self.train_tuples, loading_strategy=self.loading_strategy
+                self.train_tuples, loading_strategy=self.loading_strategy, crop_config = self.crop_config
             )
             self.val_dataset = PreEncodedLatentDataset(
-                self.val_tuples, loading_strategy=self.loading_strategy
+                self.val_tuples, loading_strategy=self.loading_strategy, crop_config = self.crop_config
             )
         if stage == "validate":
             self.val_dataset = PreEncodedLatentDataset(
-                self.val_tuples, loading_strategy=self.loading_strategy
+                self.val_tuples, loading_strategy=self.loading_strategy, crop_config = self.crop_config
             )
         if stage == "test":
             self.test_dataset = PreEncodedLatentDataset(
-                self.test_tuples, loading_strategy=self.loading_strategy
+                self.test_tuples, loading_strategy=self.loading_strategy, crop_config = self.crop_config
             )
         if stage == "predict":
             self.predict_dataset = PreEncodedLatentDataset(
-                self.predict_tuples, loading_strategy=self.loading_strategy
+                self.predict_tuples, loading_strategy=self.loading_strategy, crop_config = self.crop_config
             )
 
     def get_collate_fn(self):

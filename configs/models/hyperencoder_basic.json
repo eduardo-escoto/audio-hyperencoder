@@ -5,29 +5,29 @@
             "type": "oobleck",
             "config": {
                 "in_channels": 64,
-                "channels": 8,
-                "latent_dim": 16,
-                "c_mults": [1, 2, 4, 8, 16],
-                "strides": [2, 4, 4, 4, 8],
-                "use_snake": true
+                "channels": 64,
+                "latent_dim": 64,
+                "c_mults": [1, 2],
+                "strides": [2, 2],
+                "use_snake": false
             }
         },
         "decoder": {
             "type": "oobleck",
             "config": {
                 "out_channels": 64,
-                "channels": 8,
-                "latent_dim": 4,
-                "c_mults": [1, 2, 4, 8, 16],
-                "strides": [2, 4, 4, 4, 8],
-                "use_snake": true,
+                "channels": 32,
+                "latent_dim": 32,
+                "c_mults": [1, 2],
+                "strides": [2, 2],
+                "use_snake": false,
                 "final_tanh": false
             }
         },
         "bottleneck": {
             "type": "vae"
         },
-        "latent_dim": 16,
+        "latent_dim": 32,
         "in_channels": 64,
         "out_channels": 64
     },
@@ -46,7 +46,7 @@
         }
     },
     "demo": {
-        "demo_every": 1024,
-        "max_demos": 16
+        "demo_every": 500,
+        "max_demos": 10
     }
 }
