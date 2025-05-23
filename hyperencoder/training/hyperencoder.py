@@ -36,6 +36,23 @@ from ..data import collate_dicts
 from ..models.hyperencoder import HyperEncoder
 
 
+def reload_he_training_wrapper_from_config_and_ckpt(model_config, model, ckpt_path):
+    model_type = model_config.get("model_type", None)
+    assert model_type is not None, "model_type must be specified in model config"
+
+    training_config = model_config.get("training", None)
+    assert training_config is not None, (
+        "training config must be specified in model config"
+    )
+
+    if model_type == "hyperencoder":
+        return HyperEncoderTrainingWrapper.load_from_checkpoint(ckpt_path,
+            hyperencoder=model,
+            loss_config=training_config.get("loss_configs", None),
+            optimizer_configs=training_config.get("optimizer_configs", None),
+            lr=training_config.get("learning_rate", None),
+        )
+
 def create_he_training_wrapper_from_config(model_config, model):
     model_type = model_config.get("model_type", None)
     assert model_type is not None, "model_type must be specified in model config"
@@ -149,6 +166,7 @@ class HyperEncoderTrainingWrapper(LightningModule):
 
         self.losses_gen = MultiLoss(self.gen_loss_modules)
         self.eval_losses = ModuleDict()
+        # self.save_hyperparameters()
 
     def forward(self, outer_latents):
         return self.__reconstruct__(outer_latents)

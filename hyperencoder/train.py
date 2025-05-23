@@ -19,7 +19,12 @@ from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTh
 
 from .data import create_datamodule_from_config
 from .models import create_hyperencoder_from_config
-from .training import AutoencoderDemoCallback, create_he_training_wrapper_from_config
+from .training import (
+    AutoencoderDemoCallback,
+    HyperEncoderTrainingWrapper,
+    create_he_training_wrapper_from_config,
+    reload_he_training_wrapper_from_config_and_ckpt,
+)
 from .logging_utils import initialize_logger
 
 module_base_path = Path(__file__).parent
@@ -108,7 +113,7 @@ def main():
     # Initialize the wandb or comet logger first to get the experiment ID
     if args.logger == "wandb":
         logger = WandbLogger(
-            project=args.project, name=args.name, save_dir=args.save_dir
+            project=args.project, name=args.name, save_dir=args.save_dir, #id =  if args.run_id else None
         )
         # logger.watch(None)  # Watch can be updated later when the model is created
 
@@ -190,13 +195,17 @@ def main():
     else:
         strategy = "ddp_find_unused_parameters_true" if args.num_gpus > 1 else "auto"
     training_logger.info("Loading Hyperencoder")
+    
     model = create_hyperencoder_from_config(model_config)
-
+    
     if args.pretrained_ckpt_path:
         training_logger.info("LOADING FROM CHECKPOINT!!")
+        training_logger.info(args.pretrained_ckpt_path)
         copy_state_dict(model, load_ckpt_state_dict(args.pretrained_ckpt_path))
+        training_wrapper =  reload_he_training_wrapper_from_config_and_ckpt(model_config, model, args.pretrained_ckpt_path)
+    else:
+        training_wrapper = create_he_training_wrapper_from_config(model_config, model)
 
-    training_wrapper = create_he_training_wrapper_from_config(model_config, model)
     training_logger.info("Loaded Hyperencoder")
     if args.logger == "wandb":
         logger.watch(training_wrapper)
