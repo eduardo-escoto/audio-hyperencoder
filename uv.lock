@@ -4540,7 +4540,7 @@ requires-dist = [
     { name = "tqdm" },
     { name = "transformers" },
     { name = "v-diffusion-pytorch", specifier = "==0.0.2" },
-    { name = "vector-quantize-pytorch", specifier = "==1.14.41" },
+    { name = "vector-quantize-pytorch", specifier = "==1.22.16" },
     { name = "wandb", specifier = "==0.15.4" },
     { name = "webdataset", specifier = "==0.2.100" },
     { name = "x-transformers", specifier = "<1.27.0" },
@@ -5170,7 +5170,7 @@ wheels = [
 
 [[package]]
 name = "vector-quantize-pytorch"
-version = "1.14.41"
+version = "1.22.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "einops" },
@@ -5178,9 +5178,9 @@ dependencies = [
     { name = "torch", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "sys_platform != 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/44/e561324150bc7363eb9bece5f40cee44fc130e31fc6ebbc2665c709a05d9/vector_quantize_pytorch-1.14.41.tar.gz", hash = "sha256:d00ea91ae6a74c853adbdeb6fe7d5ee61f9bf0095b50eedae1317c7a01b742b8", size = 590470 }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/e8/7cc084d0c8f59b0c50371dbaa7e2edb6f08d4cbcecfaa7cc03556fddf4b8/vector_quantize_pytorch-1.22.16.tar.gz", hash = "sha256:4fa5b26721aa143055ddd13c84c101edd0cb52b62bb659d01c414e8ffc98ca3d", size = 697640 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/00/73aa281d6a7dfed26d4adce6d8dd4b7ceb8b0f805f174a66e942c590b81c/vector_quantize_pytorch-1.14.41-py3-none-any.whl", hash = "sha256:b774b60f2ca61ac000f007a7e189b8ff735c12f20fc91c8277a55889cc0c4db7", size = 37892 },
+    { url = "https://files.pythonhosted.org/packages/6a/7a/b5809038a323868d4740522c73831623fb40490c4a9e655de15079a4fd50/vector_quantize_pytorch-1.22.16-py3-none-any.whl", hash = "sha256:dad54c9d2f4d2ef05ed1eee409980b59c56e8e6539ce2c4cc737efe0d9dd089e", size = 47782 },
 ]
 
 [[package]]

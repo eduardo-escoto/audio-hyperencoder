@@ -27,7 +27,7 @@ from .training import (
 )
 from .logging_utils import initialize_logger
 
-module_base_path = Path(__file__).parent
+# module_base_path = Path(__file__).parent
 
 # Turn off future warnings for vector_quantize_pytorch and torch
 warnings.filterwarnings(
@@ -103,11 +103,8 @@ class LoggerWriter:
 
 def main():
     set_sharing_strategy("file_system")
-    args = get_all_args(
-        defaults_file=str(
-            (module_base_path / "./defaults/train_defaults.ini").resolve()
-        )
-    )
+
+    args = get_all_args()
     seed = args.seed
 
     # Initialize the wandb or comet logger first to get the experiment ID
