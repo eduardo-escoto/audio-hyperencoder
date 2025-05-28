@@ -211,7 +211,8 @@ def main():
         logger.watch(training_wrapper)
 
     ckpt_callback = ModelCheckpoint(
-        every_n_epochs=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=args.save_top_k, monitor="train/loss"
+        every_n_epochs=args.checkpoint_every, dirpath=checkpoint_dir, save_last=True, 
+        save_top_k=args.save_top_k, monitor="train/loss"
     )
     save_model_config_callback = ModelConfigEmbedderCallback(model_config)
 
