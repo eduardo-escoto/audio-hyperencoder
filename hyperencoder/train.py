@@ -113,7 +113,8 @@ def main():
     # Initialize the wandb or comet logger first to get the experiment ID
     if args.logger == "wandb":
         logger = WandbLogger(
-            project=args.project, name=args.name, save_dir=args.save_dir, #id =  if args.run_id else None
+            project=args.project, name=args.name, save_dir=args.save_dir, 
+            id = args.run_id if args.run_id else None, log_model="all"
         )
         # logger.watch(None)  # Watch can be updated later when the model is created
 
@@ -232,7 +233,13 @@ def main():
     )
 
     if args.logger == "wandb":
-        push_wandb_config(logger, args_dict)
+        if args.ckpt_path is None:
+            push_wandb_config(logger, args_dict)
+        else:
+            # If we're resuming a run on wandb, we don't want to push a new config or
+            #  change anything. Just reload from the old one, which we do by providing 
+            # the run id and the ckpt id.
+            pass
     elif args.logger == "comet":
         logger.log_hyperparams(args_dict)
 
