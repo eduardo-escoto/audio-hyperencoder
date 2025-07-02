@@ -15,7 +15,7 @@ dependencies = [
     "pypesq",
     "safetensors>=0.4.5",
     "scikit-learn>=1.6.0",
-    "stable-audio-tools>=0.0.16",
+    "stable-audio-tools>=0.0.18",
     "torch>=2.5.1",
     "torchaudio>=2.5.1",
     "torchvision>=0.20.1",
@@ -44,7 +44,7 @@ torchvision = [
 torchaudio = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
-stable-audio-tools = { path = "stable-audio-tools" , editable = true }
+# stable-audio-tools = { path = "stable-audio-tools" , editable = true }
 pypesq = { git = "https://github.com/vBaiCai/python-pesq" }
 
 [[tool.uv.index]]
