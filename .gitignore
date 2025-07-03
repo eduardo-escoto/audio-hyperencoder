@@ -187,4 +187,4 @@ pretransform.safetensors
 /checkpoints
 /local_data
 .env
-.vscode
+# .vscode

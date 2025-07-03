@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "schemas/model_config.schema.json": ["configs/model/*.yaml"],
+    }
+}
