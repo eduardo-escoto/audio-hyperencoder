@@ -8,6 +8,18 @@ Hydra + OmegaConf + Pydantic stack.
 
 from .base import BaseConfig
 from .training import TrainingConfig
+from .pre_encode_config import PreEncodeConfig
+from .data_config import DataConfig, DatasetEntry, CropConfig
+from .model_config import (
+    ModelConfig,
+    EncoderConfig,
+    DecoderConfig,
+    BottleneckConfig,
+    OptimizerConfig,
+    SchedulerConfig,
+    OptimizerSchedulerConfig,
+    DemoConfig,
+)
 from .hydra_integration import (
     dictconfig_to_pydantic,
     pydantic_to_dictconfig,
@@ -19,6 +31,18 @@ from .hydra_integration import (
 __all__ = [
     "BaseConfig",
     "TrainingConfig", 
+    "PreEncodeConfig",
+    "DataConfig",
+    "DatasetEntry",
+    "CropConfig",
+    "ModelConfig",
+    "EncoderConfig",
+    "DecoderConfig",
+    "BottleneckConfig",
+    "OptimizerConfig",
+    "SchedulerConfig",
+    "OptimizerSchedulerConfig",
+    "DemoConfig",
     "dictconfig_to_pydantic",
     "pydantic_to_dictconfig",
     "load_training_config",

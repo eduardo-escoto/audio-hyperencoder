@@ -1,0 +1,21 @@
+pre_encode:
+  model_name: stabilityai/stable-audio-open-1.0
+  hf_token: null
+  input_dir: /var/folders/7f/j0kkms2s3ns54c7scctq0m900000gp/T/tmpwtv_i8wl/input
+  output_dir: /var/folders/7f/j0kkms2s3ns54c7scctq0m900000gp/T/tmpwtv_i8wl/output
+  file_pattern: '*.wav'
+  batch_pattern: Track\d*
+  n_devices: 1
+  batch_size: 1
+  create_output_dir: true
+  log_failures: true
+  use_path_file: false
+  path_file: null
+  hydra:
+    run:
+      dir: ${output_dir}/hydra_outputs/${now:%Y-%m-%d_%H-%M-%S}
+    job:
+      name: pre_encode
+app:
+  name: hyperencoder-pre-encode
+  version: 0.1.0

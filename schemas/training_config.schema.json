@@ -1,0 +1,297 @@
+{
+  "$comment": "Generated from hyperencoder.config.training.TrainingConfig",
+  "$id": "https://hyperencoder.ai/schemas/training_config.schema.json",
+  "additionalProperties": false,
+  "description": "Configuration for training hyperencoder models.\n\nThis replaces the hyperencoder/defaults/train_defaults.ini file\nwith a modern, type-safe, validated configuration system.",
+  "properties": {
+    "accum_batches": {
+      "default": 1,
+      "description": "Number of batches for gradient accumulation",
+      "minimum": 1,
+      "title": "Accum Batches",
+      "type": "integer"
+    },
+    "batch_size": {
+      "default": 32,
+      "description": "Batch size for training",
+      "examples": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "maximum": 512,
+      "minimum": 1,
+      "title": "Batch Size",
+      "type": "integer"
+    },
+    "checkpoint_every": {
+      "default": 1,
+      "description": "Number of epochs between checkpoints",
+      "minimum": 1,
+      "title": "Checkpoint Every",
+      "type": "integer"
+    },
+    "ckpt_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Specific checkpoint name to resume from",
+      "title": "Ckpt Name"
+    },
+    "ckpt_path": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Trainer checkpoint file to restart training from",
+      "title": "Ckpt Path"
+    },
+    "dataset_config": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path to training dataset configuration file",
+      "examples": [
+        "configs/data/hyperencoder.json"
+      ],
+      "title": "Dataset Config"
+    },
+    "devices": {
+      "default": "auto",
+      "description": "Device specification for PyTorch Lightning",
+      "examples": [
+        "auto",
+        "gpu",
+        "cpu",
+        "1",
+        "2",
+        "[0,1]"
+      ],
+      "title": "Devices",
+      "type": "string"
+    },
+    "gradient_clip_val": {
+      "default": 0.0,
+      "description": "Gradient clipping value (0.0 disables clipping)",
+      "minimum": 0.0,
+      "title": "Gradient Clip Val",
+      "type": "number"
+    },
+    "logger": {
+      "default": "wandb",
+      "description": "Logger type to use for experiment tracking",
+      "enum": [
+        "wandb",
+        "tensorboard",
+        "csv"
+      ],
+      "title": "Logger",
+      "type": "string"
+    },
+    "model_config_path": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path to model configuration file",
+      "examples": [
+        "configs/models/hyperencoder_vqvae.json"
+      ],
+      "title": "Model Config Path"
+    },
+    "name": {
+      "default": "hyperencoder_experiment",
+      "description": "Name of the training run for logging and checkpointing",
+      "examples": [
+        "vqvae_rotation_trick_hyperencoder",
+        "basic_autoencoder_run"
+      ],
+      "title": "Name",
+      "type": "string"
+    },
+    "num_nodes": {
+      "default": 1,
+      "description": "Number of compute nodes to use for distributed training",
+      "minimum": 1,
+      "title": "Num Nodes",
+      "type": "integer"
+    },
+    "num_workers": {
+      "default": 8,
+      "description": "Number of CPU workers for the DataLoader",
+      "maximum": 32,
+      "minimum": 0,
+      "title": "Num Workers",
+      "type": "integer"
+    },
+    "persistent_workers": {
+      "default": false,
+      "description": "Whether to keep DataLoader workers persistent between epochs",
+      "title": "Persistent Workers",
+      "type": "boolean"
+    },
+    "precision": {
+      "default": "16-mixed",
+      "description": "Precision to use for training",
+      "enum": [
+        "16-mixed",
+        "bf16-mixed",
+        "32-true",
+        "64-true"
+      ],
+      "title": "Precision",
+      "type": "string"
+    },
+    "pretrained_ckpt_path": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Model checkpoint file to start new training run from",
+      "title": "Pretrained Ckpt Path"
+    },
+    "pretransform_ckpt_path": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Checkpoint path for the pretransform model if needed",
+      "title": "Pretransform Ckpt Path"
+    },
+    "project": {
+      "default": "hyperencoder",
+      "description": "Project name for experiment tracking (e.g., WandB project)",
+      "title": "Project",
+      "type": "string"
+    },
+    "recover": {
+      "default": false,
+      "description": "Attempt to resume training from latest checkpoint",
+      "title": "Recover",
+      "type": "boolean"
+    },
+    "remove_pretransform_weight_norm": {
+      "default": false,
+      "description": "Remove weight norm from the pretransform model",
+      "title": "Remove Pretransform Weight Norm",
+      "type": "boolean"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Unique identifier for this training run",
+      "title": "Run Id"
+    },
+    "save_dir": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Directory to save checkpoints and model files",
+      "examples": [
+        "data/experiments/my_run"
+      ],
+      "title": "Save Dir"
+    },
+    "save_top_k": {
+      "default": 20,
+      "description": "Save top K model checkpoints (-1 for all)",
+      "minimum": -1,
+      "title": "Save Top K",
+      "type": "integer"
+    },
+    "seed": {
+      "default": 42,
+      "description": "Random seed for reproducibility",
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "strategy": {
+      "default": "auto",
+      "description": "Multi-GPU strategy for PyTorch Lightning",
+      "enum": [
+        "auto",
+        "ddp",
+        "ddp_find_unused_parameters_true",
+        "fsdp"
+      ],
+      "title": "Strategy",
+      "type": "string"
+    },
+    "val_dataset_config": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path to validation dataset configuration file",
+      "title": "Val Dataset Config"
+    },
+    "val_every": {
+      "default": -1,
+      "description": "Number of steps between validation runs (-1 to disable)",
+      "minimum": -1,
+      "title": "Val Every",
+      "type": "integer"
+    }
+  },
+  "title": "TrainingConfig",
+  "type": "object"
+}

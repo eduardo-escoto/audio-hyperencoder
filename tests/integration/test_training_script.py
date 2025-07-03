@@ -101,8 +101,8 @@ class TestTrainingScriptIntegration:
         GlobalHydra.instance().clear()
         
         try:
-            with initialize(config_path="../../conf", version_base=None):
-                cfg = compose(config_name="config")
+            with initialize(config_path="../../configs", version_base=None):
+                cfg = compose(config_name="train")
                 
                 # Should be able to load training config
                 training_config = load_training_config(cfg)
@@ -116,9 +116,9 @@ class TestTrainingScriptIntegration:
             # Clean up Hydra
             GlobalHydra.instance().clear()
 
-    @patch('hyperencoder.train_hydra.create_hyperencoder_from_config')
-    @patch('hyperencoder.train_hydra.create_datamodule_from_config')
-    @patch('hyperencoder.train_hydra.initialize_logger')
+    @patch('hyperencoder.models.create_hyperencoder_from_config')
+    @patch('hyperencoder.data.create_datamodule_from_config')
+    @patch('hyperencoder.logging_utils.initialize_logger')
     def test_training_script_initialization(
         self, 
         mock_logger_init,

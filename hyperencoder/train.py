@@ -108,7 +108,7 @@ class LoggerWriter:
         pass
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../configs", config_name="train")
 def main(cfg: DictConfig) -> None:
     """Main training function using Hydra configuration."""
     set_sharing_strategy("file_system")

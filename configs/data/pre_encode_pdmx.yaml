@@ -1,0 +1,15 @@
+# configs/data/pre_encode_pdmx.yaml
+# Pre-encoding PDMX dataset configuration
+
+_target_: hyperencoder.data.audio.AudioDirectoryDataset
+
+# Dataset configuration
+dataset_type: audio_dir
+
+# Data paths
+datasets:
+  - id: sPDMX
+    path: /home/eduardo/Projects/audio-hyperencoder/sPDMX_Mount
+
+# Data processing
+random_crop: true 

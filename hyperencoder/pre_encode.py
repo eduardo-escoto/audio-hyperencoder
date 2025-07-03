@@ -1,8 +1,10 @@
 import json
 import pathlib
 import warnings
+from typing import Dict, List, Optional, Any
 
-# from argparse import ArgumentParser
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import torch
 import torchaudio
 from tqdm import tqdm
@@ -11,29 +13,12 @@ from safetensors.torch import save_file as sf_save_file
 from stable_audio_tools import get_pretrained_model
 from stable_audio_tools.models.pretransforms import AutoencoderPretransform
 
-from .data import AudioDataModule
+from .data.audio import AudioDataModule
 from .modules import AudioAutoEncoder
 
-# parser = ArgumentParser(
-#     prog="audio_pre_encoder",
-#     description="pre-encodes audio to latents using stable audio",
-# )
 
-# parser.add_argument(
-#     "-t", "--token", required=False, help="token for hugging face login"
-# )
-# parser.add_argument(
-#     "-i", "--input-dir", required=True, help="data directory of files to pre-encode"
-# )
-# parser.add_argument(
-# "-o", "--output-dir", required=True, help="directory to output to"
-# )
-# parser.add_argument(
-#     "-n", "--n-devices", required=False, help="number of devices to use"
-# )
-
-
-def login_to_hf(token: str = None):
+def login_to_hf(token: Optional[str] = None):
+    """Login to HuggingFace Hub."""
     from huggingface_hub import login
 
     if token is None:
@@ -43,59 +28,54 @@ def login_to_hf(token: str = None):
 
 
 def load_model_config(path):
+    """Load model configuration from JSON file."""
     with open(path) as f:
         pretransform_config = json.load(f)
         return pretransform_config
 
 
-def load_model(hf_token=None):
-    # from os import environ as get_env
-
+def load_model(model_name: str, hf_token: Optional[str] = None):
+    """Load pretrained model from HuggingFace Hub."""
     if hf_token is not None:
-        # token = get_env.get("HF_TOKEN")
         login_to_hf(token=hf_token)
 
     # Download model
-    model, pretrained_model_config = get_pretrained_model(
-        "stabilityai/stable-audio-open-1.0"
-    )
-
+    model, pretrained_model_config = get_pretrained_model(model_name)
     return model
 
 
 def get_input_files(
-    input_dir,
-    file_name="*.wav",
-    batch_pattern=r"Track\d*",
-    batched=True,
-    path_file=None,
-):
+    input_dir: str,
+    file_name: str = "*.wav",
+    batch_pattern: str = r"Track\d*",
+    batched: bool = True,
+    path_file: Optional[str] = None,
+) -> Dict[str, List[pathlib.Path]]:
+    """Get input files organized by batch."""
     if path_file is not None:
-        file_paths = ""
-        with open(path_file) as path_file:
-            file_paths = path_file.read()
-        file_paths = file_paths.split("\n")
-        return file_paths
+        with open(path_file) as f:
+            file_paths = f.read().strip().split("\n")
+        return {"batch_0": [pathlib.Path(p) for p in file_paths if p.strip()]}
 
-    input_path: pathlib.Path = pathlib.Path(input_dir)
-
+    input_path = pathlib.Path(input_dir)
     files = [p.resolve() for p in sorted(list(input_path.glob(f"**/{file_name}")))]
+    
     from collections import defaultdict
-
-    batch_dict = defaultdict(list)
     import regex
 
+    batch_dict = defaultdict(list)
     r = regex.compile(batch_pattern)
 
     for file in files:
-        batch_folder = r.findall(str(file))[0]
-        if batch_folder != "":
-            batch_dict[batch_folder].append(file)
-    return batch_dict
+        matches = r.findall(str(file))
+        batch_folder = matches[0] if matches else "default_batch"
+        batch_dict[batch_folder].append(file)
+    
+    return dict(batch_dict)
 
 
-def get_path_up_to_n_parents(path, n):
-    """Gets the file path up to a certain number of parent directories."""
+def get_path_up_to_n_parents(path: pathlib.Path, n: int) -> pathlib.Path:
+    """Get the file path up to a certain number of parent directories."""
     out_path = "/"
     for _ in range(n):
         path = path.parent
@@ -103,12 +83,11 @@ def get_path_up_to_n_parents(path, n):
     return pathlib.Path(out_path)
 
 
-def get_path_up_to_regex(path, regex_str=r"Track\d*"):
-    """Gets the file path up to a certain number of parent directories."""
+def get_path_up_to_regex(path: pathlib.Path, regex_str: str = r"Track\d*") -> pathlib.Path:
+    """Get the file path up to a certain number of parent directories."""
     import regex
 
     r = regex.compile(regex_str)
-
     full_path = path.resolve()
     iter_path = path.resolve()
 
@@ -121,15 +100,20 @@ def get_path_up_to_regex(path, regex_str=r"Track\d*"):
 
 
 def process_batches(
-    device,
-    reload_pretransform,
-    batches,
+    device: torch.device,
+    reload_pretransform: Any,
+    batches: Dict[str, List[pathlib.Path]],
     output_dir_path: pathlib.Path,
-    loop_offset=None,
-    n_jobs=None,
-    parent_level=1,
-):
-    with open(output_dir_path / "failures.log", "w") as fail_file:
+    batch_size: int = 1,
+    log_failures: bool = True,
+    loop_offset: Optional[int] = None,
+    n_jobs: Optional[int] = None,
+    parent_level: int = 1,
+) -> None:
+    """Process batches of audio files and save encoded latents."""
+    failure_log_path = output_dir_path / "failures.log" if log_failures else None
+    
+    with open(failure_log_path, "w") if failure_log_path else open("/dev/null", "w") as fail_file:
         for batch_name, file_paths in tqdm(
             batches.items(), total=len(list(batches.keys()))
         ):
@@ -144,23 +128,20 @@ def process_batches(
                     batch_tensors.append(waveform)
                     sample_rates.append(sample_rate)
                 except Exception as e:
-                    print("File Failed")
+                    print(f"File Failed: {file}")
                     print(e)
-                    fail_file.write(f"{str(file)}\r\n")
+                    if log_failures:
+                        fail_file.write(f"{str(file)}\r\n")
 
-            batch_size = 1
+            if not batch_tensors:
+                print(f"No valid files in batch {batch_name}, skipping...")
+                continue
+
+            # Process in sub-batches
             sub_batches = []
             for i in range(0, len(batch_tensors), batch_size):
-                sub_batch_tensors = batch_tensors[
-                    i : i + batch_size
-                    if i + batch_size < len(batch_tensors)
-                    else len(batch_tensors)
-                ]
-                sub_sample_rates = sample_rates[
-                    i : i + batch_size
-                    if i + batch_size < len(batch_tensors)
-                    else len(batch_tensors)
-                ]
+                sub_batch_tensors = batch_tensors[i:i + batch_size]
+                sub_sample_rates = sample_rates[i:i + batch_size]
 
                 preprocessed_audio = (
                     reload_pretransform.model.preprocess_audio_list_for_encoder(
@@ -175,78 +156,123 @@ def process_batches(
 
                 sub_batches.append(cpu_latents)
 
+            if not sub_batches:
+                print(f"No valid latents generated for batch {batch_name}, skipping...")
+                continue
+
             cpu_latents = torch.cat(sub_batches, dim=0)
 
+            # Create output dictionary
             out_dict = {}
-            for i in range(cpu_latents.shape[0]):
+            for i in range(min(cpu_latents.shape[0], len(file_paths))):
                 out_dict[file_paths[i].stem] = cpu_latents[i]
 
+            # Save to file
             output_fp = pathlib.Path(f"{batch_name}_latent.safetensors")
-            out_path = pathlib.Path(
-                f"{str(output_dir_path.resolve())}/{str(output_fp)}"
-            )
+            out_path = output_dir_path / output_fp
 
             print(f"Outputting: {out_path.resolve()}")
             if not out_path.parent.exists():
-                print(f"Creating directory:{out_path.parent}")
+                print(f"Creating directory: {out_path.parent}")
                 out_path.parent.mkdir(parents=True, exist_ok=True)
 
             sf_save_file(out_dict, out_path.absolute())
 
 
 def audio_encoding_pipeline(
-    audio_pretransform: AutoencoderPretransform, input_path, n_devices=1
-):
+    audio_pretransform: AutoencoderPretransform, 
+    input_path: pathlib.Path, 
+    n_devices: int = 1
+) -> Optional[Any]:
+    """Run the audio encoding pipeline using Lightning."""
     dm = AudioDataModule(
-        input_path, batch_size=1, file_pattern=r".*\.wav$", group_pattern=r"Track\d*"
+        input_path, 
+        batch_size=1, 
+        file_pattern=r".*\.wav$", 
+        group_pattern=r"Track\d*"
     )
-    model = AudioAutoEncoder(audio_pretransform, encode_only=True)
+    model = AudioAutoEncoder(audio_pretransform.model, encode_only=True)
 
     trainer = Trainer(devices=n_devices, accelerator="gpu")
-
     encoded_audio = trainer.predict(model, dm)
     return encoded_audio
 
 
-def main(args):
+@hydra.main(version_base=None, config_path="../configs", config_name="pre_encode")
+def main(cfg: DictConfig) -> None:
+    """Main pre-encoding function using Hydra configuration."""
+    # Configure warnings
     warnings.simplefilter(action="ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", module="torch")
     warnings.filterwarnings("ignore", module="stable_audio_tools")
     warnings.filterwarnings("ignore", module="x_transformers")
     warnings.filterwarnings("ignore", module="vector_quantize_pytorch")
     torch.set_float32_matmul_precision("medium")
-    # args = parser.parse_args()
-    n_devices = args.n_devices if args.n_devices is not None else 1
-    input_path = pathlib.Path(args.input_dir)
-    output_path = pathlib.Path(args.output_dir)
 
-    if not output_path.exists():
-        output_path.mkdir()
+    # Print configuration
+    print("Pre-encoding Configuration:")
+    print(OmegaConf.to_yaml(cfg))
 
-    model = load_model(hf_token=args.token)
+    # Extract configuration
+    pre_encode_cfg = cfg.pre_encode
+    
+    # Validate required paths
+    input_path = pathlib.Path(pre_encode_cfg.input_dir)
+    output_path = pathlib.Path(pre_encode_cfg.output_dir)
+    
+    if not input_path.exists():
+        raise ValueError(f"Input directory does not exist: {input_path}")
+    
+    if pre_encode_cfg.create_output_dir and not output_path.exists():
+        print(f"Creating output directory: {output_path}")
+        output_path.mkdir(parents=True, exist_ok=True)
+    elif not output_path.exists():
+        raise ValueError(f"Output directory does not exist: {output_path}")
 
-    encoded_audios = audio_encoding_pipeline(
-        model.pretransform.model, input_path, n_devices=n_devices
+    # Load model
+    print(f"Loading model: {pre_encode_cfg.model_name}")
+    model = load_model(
+        model_name=pre_encode_cfg.model_name,
+        hf_token=pre_encode_cfg.hf_token
     )
-    print(len(encoded_audios))
-    # output_audios(encoded_audios, output_path)
+
+    # Get input files
+    print("Scanning for input files...")
+    if pre_encode_cfg.use_path_file and pre_encode_cfg.path_file:
+        batches = get_input_files(
+            input_dir=str(input_path),
+            file_name=pre_encode_cfg.file_pattern,
+            batch_pattern=pre_encode_cfg.batch_pattern,
+            path_file=pre_encode_cfg.path_file
+        )
+    else:
+        batches = get_input_files(
+            input_dir=str(input_path),
+            file_name=pre_encode_cfg.file_pattern,
+            batch_pattern=pre_encode_cfg.batch_pattern
+        )
+    
+    if not batches:
+        print("No audio files found to process!")
+        return
+    
+    print(f"Found {len(batches)} batches with {sum(len(files) for files in batches.values())} total files")
+
+    # Process batches
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
+    process_batches(
+        device=device,
+        reload_pretransform=model.pretransform,
+        batches=batches,
+        output_dir_path=output_path,
+        batch_size=pre_encode_cfg.batch_size,
+        log_failures=pre_encode_cfg.log_failures
+    )
+    
+    print("Pre-encoding completed successfully!")
 
 
-# if __name__ == "__main__":
-#     warnings.simplefilter(action="ignore", category=FutureWarning)
-
-#     args = parser.parse_args()
-#     n_devices = args.n_devices if args.n_devices is not None else 1
-#     input_path = pathlib.Path(args.input_dir)
-#     output_path = pathlib.Path(args.output_dir)
-
-#     if not output_path.exists():
-#         output_path.mkdir()
-
-#     model = load_model(token=args.token)
-
-#     encoded_audios = audio_encoding_pipeline(
-#         model.pretransform, input_path, n_devices=n_devices
-#     )
-#     print(len(encoded_audios))
-#     # output_audios(encoded_audios, output_path)
+if __name__ == "__main__":
+    main()

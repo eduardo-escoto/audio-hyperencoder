@@ -1,0 +1,566 @@
+{
+  "$comment": "Generated from hyperencoder.config.model_config.ModelConfig",
+  "$defs": {
+    "BottleneckConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for bottleneck architecture.",
+      "properties": {
+        "_target_": {
+          "default": "hyperencoder.models.bottlenecks.FSQBottleneck",
+          "description": "Target bottleneck class",
+          "examples": [
+            "hyperencoder.models.bottlenecks.FSQBottleneck",
+            "hyperencoder.models.bottlenecks.VQBottleneck",
+            "hyperencoder.models.bottlenecks.NoBottleneck"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "codebook_size": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Size of codebook for VQ bottleneck",
+          "title": "Codebook Size"
+        },
+        "commitment_loss_weight": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Weight for commitment loss in VQ",
+          "title": "Commitment Loss Weight"
+        },
+        "levels": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": [
+            8,
+            5,
+            5,
+            5
+          ],
+          "description": "Quantization levels for FSQ bottleneck",
+          "title": "Levels"
+        },
+        "num_quantizers": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Number of quantizers for VQ bottleneck",
+          "title": "Num Quantizers"
+        }
+      },
+      "title": "BottleneckConfig",
+      "type": "object"
+    },
+    "DecoderConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for decoder architecture.",
+      "properties": {
+        "_target_": {
+          "default": "hyperencoder.models.decoders.OobleckDecoder",
+          "description": "Target decoder class",
+          "examples": [
+            "hyperencoder.models.decoders.OobleckDecoder",
+            "hyperencoder.models.decoders.ResNetDecoder"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "c_mults": {
+          "default": [
+            16,
+            8,
+            4,
+            2,
+            2
+          ],
+          "description": "Channel multipliers for each layer",
+          "items": {
+            "type": "integer"
+          },
+          "title": "C Mults",
+          "type": "array"
+        },
+        "channels": {
+          "default": 4,
+          "description": "Base number of channels",
+          "minimum": 1,
+          "title": "Channels",
+          "type": "integer"
+        },
+        "final_tanh": {
+          "default": false,
+          "description": "Whether to apply tanh activation at the end",
+          "title": "Final Tanh",
+          "type": "boolean"
+        },
+        "latent_dim": {
+          "default": 4,
+          "description": "Dimension of latent space",
+          "minimum": 1,
+          "title": "Latent Dim",
+          "type": "integer"
+        },
+        "out_channels": {
+          "default": 64,
+          "description": "Number of output channels",
+          "minimum": 1,
+          "title": "Out Channels",
+          "type": "integer"
+        },
+        "strides": {
+          "default": [
+            8,
+            8,
+            4,
+            4,
+            1
+          ],
+          "description": "Stride values for each layer",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Strides",
+          "type": "array"
+        },
+        "use_snake": {
+          "default": false,
+          "description": "Whether to use Snake activation",
+          "title": "Use Snake",
+          "type": "boolean"
+        }
+      },
+      "title": "DecoderConfig",
+      "type": "object"
+    },
+    "DemoConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for demo/evaluation settings.",
+      "properties": {
+        "demo_every": {
+          "default": 20,
+          "description": "Generate demo every N steps",
+          "minimum": 1,
+          "title": "Demo Every",
+          "type": "integer"
+        },
+        "demo_length": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Length of demo sequences",
+          "title": "Demo Length"
+        },
+        "max_demos": {
+          "default": 10,
+          "description": "Maximum number of demos to generate",
+          "minimum": 1,
+          "title": "Max Demos",
+          "type": "integer"
+        },
+        "save_demos": {
+          "default": true,
+          "description": "Whether to save demo outputs",
+          "title": "Save Demos",
+          "type": "boolean"
+        }
+      },
+      "title": "DemoConfig",
+      "type": "object"
+    },
+    "EncoderConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for encoder architecture.",
+      "properties": {
+        "_target_": {
+          "default": "hyperencoder.models.encoders.OobleckEncoder",
+          "description": "Target encoder class",
+          "examples": [
+            "hyperencoder.models.encoders.OobleckEncoder",
+            "hyperencoder.models.encoders.ResNetEncoder"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "c_mults": {
+          "default": [
+            16,
+            8,
+            4,
+            2,
+            2
+          ],
+          "description": "Channel multipliers for each layer",
+          "items": {
+            "type": "integer"
+          },
+          "title": "C Mults",
+          "type": "array"
+        },
+        "channels": {
+          "default": 4,
+          "description": "Base number of channels",
+          "minimum": 1,
+          "title": "Channels",
+          "type": "integer"
+        },
+        "in_channels": {
+          "default": 64,
+          "description": "Number of input channels",
+          "minimum": 1,
+          "title": "In Channels",
+          "type": "integer"
+        },
+        "latent_dim": {
+          "default": 4,
+          "description": "Dimension of latent space",
+          "minimum": 1,
+          "title": "Latent Dim",
+          "type": "integer"
+        },
+        "strides": {
+          "default": [
+            8,
+            8,
+            4,
+            4,
+            1
+          ],
+          "description": "Stride values for each layer",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Strides",
+          "type": "array"
+        },
+        "use_snake": {
+          "default": false,
+          "description": "Whether to use Snake activation",
+          "title": "Use Snake",
+          "type": "boolean"
+        }
+      },
+      "title": "EncoderConfig",
+      "type": "object"
+    },
+    "OptimizerConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for optimizer settings.",
+      "properties": {
+        "_target_": {
+          "default": "torch.optim.AdamW",
+          "description": "Target optimizer class",
+          "examples": [
+            "torch.optim.AdamW",
+            "torch.optim.Adam",
+            "torch.optim.SGD"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "betas": {
+          "default": [
+            0.9,
+            0.999
+          ],
+          "description": "Beta parameters for Adam-based optimizers",
+          "items": {
+            "type": "number"
+          },
+          "title": "Betas",
+          "type": "array"
+        },
+        "eps": {
+          "default": 1e-08,
+          "description": "Epsilon for numerical stability",
+          "minimum": 1e-12,
+          "title": "Eps",
+          "type": "number"
+        },
+        "lr": {
+          "default": 0.0001,
+          "description": "Learning rate",
+          "maximum": 1.0,
+          "minimum": 1e-08,
+          "title": "Lr",
+          "type": "number"
+        },
+        "weight_decay": {
+          "default": 0.001,
+          "description": "Weight decay (L2 regularization)",
+          "minimum": 0.0,
+          "title": "Weight Decay",
+          "type": "number"
+        }
+      },
+      "title": "OptimizerConfig",
+      "type": "object"
+    },
+    "OptimizerSchedulerConfig": {
+      "additionalProperties": false,
+      "description": "Combined optimizer and scheduler configuration.",
+      "properties": {
+        "optimizer": {
+          "$ref": "#/$defs/OptimizerConfig",
+          "description": "Optimizer configuration"
+        },
+        "scheduler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SchedulerConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Learning rate scheduler configuration"
+        }
+      },
+      "title": "OptimizerSchedulerConfig",
+      "type": "object"
+    },
+    "SchedulerConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for learning rate scheduler.",
+      "properties": {
+        "_target_": {
+          "default": "stable_audio_tools.training.lr_schedulers.InverseLR",
+          "description": "Target scheduler class",
+          "examples": [
+            "stable_audio_tools.training.lr_schedulers.InverseLR",
+            "torch.optim.lr_scheduler.CosineAnnealingLR",
+            "torch.optim.lr_scheduler.StepLR"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "gamma": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gamma parameter for StepLR scheduler",
+          "title": "Gamma"
+        },
+        "inv_gamma": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 1000000,
+          "description": "Inverse gamma parameter for InverseLR scheduler",
+          "title": "Inv Gamma"
+        },
+        "power": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.5,
+          "description": "Power parameter for InverseLR scheduler",
+          "title": "Power"
+        },
+        "step_size": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Step size for StepLR scheduler",
+          "title": "Step Size"
+        },
+        "warmup": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.99,
+          "description": "Warmup ratio for scheduler",
+          "title": "Warmup"
+        }
+      },
+      "title": "SchedulerConfig",
+      "type": "object"
+    },
+    "TrainingConfig": {
+      "additionalProperties": false,
+      "description": "Training-specific configuration for the model.",
+      "properties": {
+        "optimizer_configs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/OptimizerSchedulerConfig"
+          },
+          "description": "Optimizer configurations for different model components",
+          "examples": [
+            {
+              "hyperencoder": {
+                "optimizer": {
+                  "lr": 5e-05
+                },
+                "scheduler": {
+                  "inv_gamma": 1000000
+                }
+              }
+            }
+          ],
+          "title": "Optimizer Configs",
+          "type": "object"
+        }
+      },
+      "title": "TrainingConfig",
+      "type": "object"
+    }
+  },
+  "$id": "https://hyperencoder.ai/schemas/model_config.schema.json",
+  "additionalProperties": false,
+  "description": "Configuration for hyperencoder model architecture.\n\nThis replaces the previous JSON-based model configurations with\na modern, type-safe, validated configuration system.",
+  "properties": {
+    "_target_": {
+      "default": "hyperencoder.models.hyperencoder.HyperEncoder",
+      "description": "Target model class to instantiate",
+      "examples": [
+        "hyperencoder.models.hyperencoder.HyperEncoder",
+        "hyperencoder.models.hyperencoder.BasicHyperEncoder"
+      ],
+      "title": "Target",
+      "type": "string"
+    },
+    "bottleneck": {
+      "$ref": "#/$defs/BottleneckConfig",
+      "description": "Bottleneck architecture configuration"
+    },
+    "decoder": {
+      "$ref": "#/$defs/DecoderConfig",
+      "description": "Decoder architecture configuration"
+    },
+    "demo": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DemoConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Demo and evaluation settings"
+    },
+    "encoder": {
+      "$ref": "#/$defs/EncoderConfig",
+      "description": "Encoder architecture configuration"
+    },
+    "in_channels": {
+      "default": 64,
+      "description": "Number of input channels",
+      "minimum": 1,
+      "title": "In Channels",
+      "type": "integer"
+    },
+    "latent_dim": {
+      "default": 4,
+      "description": "Dimension of the latent space",
+      "minimum": 1,
+      "title": "Latent Dim",
+      "type": "integer"
+    },
+    "out_channels": {
+      "default": 64,
+      "description": "Number of output channels",
+      "minimum": 1,
+      "title": "Out Channels",
+      "type": "integer"
+    },
+    "sample_rate": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Sample rate for audio processing",
+      "title": "Sample Rate"
+    },
+    "training": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrainingConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Training-specific configuration"
+    }
+  },
+  "title": "ModelConfig",
+  "type": "object"
+}
