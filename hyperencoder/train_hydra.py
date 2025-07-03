@@ -1,3 +1,10 @@
+"""
+Hyperencoder training script using Hydra + OmegaConf + Pydantic configuration system.
+
+This script replaces the old prefigure-based training with a modern configuration
+architecture that provides type safety, validation, and better maintainability.
+"""
+
 import sys
 import json
 import logging
@@ -34,14 +41,11 @@ from .config.hydra_integration import (
     print_config_summary,
 )
 
-# module_base_path = Path(__file__).parent
-
 # Turn off future warnings for vector_quantize_pytorch and torch
 warnings.filterwarnings(
     "ignore", category=FutureWarning, module="vector_quantize_pytorch"
 )
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
-
 
 set_float32_matmul_precision("medium")
 
@@ -74,8 +78,8 @@ def load_model(
 
 
 class ExceptionCallback(Callback):
-    def on_exception(self, trainer, module, err):
-        print(f"{type(err).__name__}: {err}")
+    def on_exception(self, trainer, pl_module, exception):
+        print(f"{type(exception).__name__}: {exception}")
 
 
 class ModelConfigEmbedderCallback(Callback):
@@ -94,7 +98,6 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
 
-# Replace sys.stdout and sys.stderr with the logger
 class LoggerWriter:
     def __init__(self, logger, log_level=logging.INFO):
         self.logger = logger
@@ -131,7 +134,6 @@ def main(cfg: DictConfig) -> None:
             id=training_config.run_id, 
             log_model="all"
         )
-        # logger.watch(None)  # Watch can be updated later when the model is created
 
         if training_config.save_dir and isinstance(logger.experiment.id, str):
             checkpoint_dir = path.join(
@@ -166,10 +168,6 @@ def main(cfg: DictConfig) -> None:
         else "default",
     )
 
-    # Redirect stdout and stderr to the logger
-    # sys.stdout = LoggerWriter(training_logger, logging.INFO)
-    # sys.stderr = LoggerWriter(training_logger, logging.ERROR)
-
     training_logger.info(f"CUDA_VISIBLE_DEVICES={environ.get('CUDA_VISIBLE_DEVICES')}")
     training_logger.info("Running training script with configuration:")
     training_logger.info(json.dumps(training_config.model_dump(), indent=2, default=str))
@@ -187,20 +185,22 @@ def main(cfg: DictConfig) -> None:
             dataset_config = json.load(f)
     else:
         raise ValueError("dataset_config must be specified in training configuration")
+
     training_logger.info("Creating the pre_encoded data module")
-    training_logger.info(f"persistent workers: {training_config.persistent_workers}, {bool(training_config.persistent_workers)}")
+    training_logger.info(f"persistent workers: {training_config.persistent_workers}")
     pre_enc_datamodule = create_datamodule_from_config(
         dataset_config,
         batch_size=training_config.batch_size,
         num_workers=training_config.num_workers,
         random_seed=training_config.seed,
-        persistent_workers=bool(training_config.persistent_workers),
+        persistent_workers=training_config.persistent_workers,
     )
     training_logger.info("Setting up the validation fold for demos")
     pre_enc_datamodule.setup("validate")
     training_logger.info("Validation fold for demos setup")
+
     # Set multi-GPU strategy if specified
-    if training_config.strategy != "auto":  # Only use custom strategy if not auto
+    if training_config.strategy != "auto":
         if training_config.strategy == "deepspeed":
             from pytorch_lightning.strategies import DeepSpeedStrategy
 
@@ -217,31 +217,38 @@ def main(cfg: DictConfig) -> None:
             strategy = training_config.strategy
     else:
         strategy = "auto"  # Use Lightning's auto strategy selection
+
     training_logger.info("Loading Hyperencoder")
     
     model = create_hyperencoder_from_config(model_config)
     
     if training_config.pretrained_ckpt_path:
         training_logger.info("LOADING FROM CHECKPOINT!!")
-        training_logger.info(args.pretrained_ckpt_path)
-        copy_state_dict(model, load_ckpt_state_dict(args.pretrained_ckpt_path))
-        training_wrapper =  reload_he_training_wrapper_from_config_and_ckpt(model_config, model, args.pretrained_ckpt_path)
+        training_logger.info(str(training_config.pretrained_ckpt_path))
+        copy_state_dict(model, load_ckpt_state_dict(str(training_config.pretrained_ckpt_path)))
+        training_wrapper = reload_he_training_wrapper_from_config_and_ckpt(
+            model_config, model, str(training_config.pretrained_ckpt_path)
+        )
     else:
         training_wrapper = create_he_training_wrapper_from_config(model_config, model)
 
     training_logger.info("Loaded Hyperencoder")
-    if args.logger == "wandb":
+    if training_config.logger == "wandb" and logger and hasattr(logger, 'watch'):
         logger.watch(training_wrapper)
 
     ckpt_callback = ModelCheckpoint(
-        every_n_epochs=args.checkpoint_every, dirpath=checkpoint_dir, save_last=True, 
-        save_top_k=args.save_top_k, monitor="train/loss"
+        every_n_epochs=training_config.checkpoint_every, 
+        dirpath=checkpoint_dir, 
+        save_last=True, 
+        save_top_k=training_config.save_top_k, 
+        monitor="train/loss"
     )
     save_model_config_callback = ModelConfigEmbedderCallback(model_config)
 
-    args_dict = vars(args)
-    args_dict.update({"model_config": model_config})
-    args_dict.update({"dataset_config": dataset_config})
+    # Create configuration dict for logging (compatible with old wandb/comet logging)
+    config_dict = training_config.model_dump()
+    config_dict.update({"model_config": model_config})
+    config_dict.update({"dataset_config": dataset_config})
 
     pre_trained_model, pre_trained_model_config = load_model(
         pretrained_name="stabilityai/stable-audio-open-1.0"
@@ -254,23 +261,21 @@ def main(cfg: DictConfig) -> None:
         max_demos=model_config['demo'].get("max_demos", 10),
     )
 
-    if args.logger == "wandb":
-        if args.ckpt_path is None:
-            push_wandb_config(logger, args_dict)
-        else:
-            # If we're resuming a run on wandb, we don't want to push a new config or
-            #  change anything. Just reload from the old one, which we do by providing 
-            # the run id and the ckpt id.
-            pass
-    elif args.logger == "comet":
-        logger.log_hyperparams(args_dict)
+    # Log configuration to wandb/comet
+    if training_config.logger == "wandb" and logger:
+        if training_config.ckpt_path is None:
+            # New run - push configuration
+            logger.log_hyperparams(config_dict)
+        # If resuming, don't push new config (preserves run history)
+    elif training_config.logger == "comet" and logger:
+        logger.log_hyperparams(config_dict)
 
     val_args = {}
-    if args.val_every > 0:
+    if training_config.val_every > 0:
         val_args.update(
             {
                 "check_val_every_n_epoch": None,
-                "val_check_interval": args.val_every,
+                "val_check_interval": training_config.val_every,
             }
         )
 
@@ -294,12 +299,12 @@ def main(cfg: DictConfig) -> None:
     )
 
     trainer = Trainer(
-        devices=args.devices,
+        devices=training_config.devices,
         accelerator="gpu",
-        num_nodes=args.num_nodes,
+        num_nodes=training_config.num_nodes,
         strategy=strategy,
-        precision=args.precision,
-        accumulate_grad_batches=args.accum_batches,
+        precision=training_config.precision,
+        accumulate_grad_batches=training_config.accum_batches,
         callbacks=[
             progress_bar,
             ckpt_callback,
@@ -310,11 +315,9 @@ def main(cfg: DictConfig) -> None:
         logger=logger,
         log_every_n_steps=1,
         max_epochs=10000000,
-        default_root_dir=args.save_dir,
-        gradient_clip_val=args.gradient_clip_val,
+        default_root_dir=str(training_config.save_dir) if training_config.save_dir else None,
+        gradient_clip_val=training_config.gradient_clip_val,
         enable_progress_bar=True,
-        # reload_dataloaders_every_n_epochs=0,
-        # num_sanity_val_steps=0,  # If you need to debug validation, change this line
         **val_args,
     )
 
@@ -322,10 +325,10 @@ def main(cfg: DictConfig) -> None:
     trainer.fit(
         training_wrapper,
         datamodule=pre_enc_datamodule,
-        ckpt_path=args.ckpt_path if args.ckpt_path else None,
+        ckpt_path=str(training_config.ckpt_path) if training_config.ckpt_path else None,
     )
     training_logger.info("Finished Training")
 
 
 if __name__ == "__main__":
-    main()
+    main() 
