@@ -188,3 +188,5 @@ pretransform.safetensors
 /local_data
 .env
 # .vscode
+
+outputs/

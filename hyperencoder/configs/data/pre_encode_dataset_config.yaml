@@ -1,0 +1,15 @@
+# configs/data/pre_encode_dataset_config.yaml
+# Pre-encoding dataset configuration
+
+_target_: hyperencoder.data.audio.AudioDirectoryDataset
+
+# Dataset configuration
+dataset_type: audio_dir
+
+# Data paths
+datasets:
+  - id: babyslakh
+    path: /home/eduardo/Projects/audio-hyperencoder/data/babyslakh_16k
+
+# Data processing
+random_crop: true 

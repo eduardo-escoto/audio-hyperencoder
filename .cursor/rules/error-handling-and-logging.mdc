@@ -1,7 +1,8 @@
 ---
 alwaysApply: true
+description: An explanation of how we should handle error-handling and logging.
 ---
-
+ 
 # Error Handling and Logging
 
 ## Logging Philosophy

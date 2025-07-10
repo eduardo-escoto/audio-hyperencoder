@@ -1,0 +1,49 @@
+# configs/model/hyperencoder_vqvae.yaml
+# VQVAE hyperencoder model configuration
+
+_target_: hyperencoder.models.hyperencoder.HyperEncoder
+
+# Model architecture - VQVAE variant
+encoder:
+  _target_: hyperencoder.models.encoders.OobleckEncoder
+  in_channels: 64
+  channels: 64
+  latent_dim: 64
+  c_mults: [1, 2]
+  strides: [2, 2]
+  use_snake: false
+
+decoder:
+  _target_: hyperencoder.models.decoders.OobleckDecoder
+  out_channels: 64
+  channels: 32
+  latent_dim: 32
+  c_mults: [1, 2]
+  strides: [2, 2]
+  use_snake: false
+  final_tanh: false
+
+bottleneck:
+  _target_: hyperencoder.models.bottlenecks.RVQVAEBottleneck
+  rotation_trick: false
+  dim: 32
+
+# Model dimensions
+latent_dim: 32
+in_channels: 64
+out_channels: 64
+
+# Training configuration
+training:
+  optimizer_configs:
+    hyperencoder:
+      optimizer:
+        _target_: torch.optim.AdamW
+        lr: 5e-5
+        betas: [0.9, 0.999]
+        weight_decay: 1e-3
+
+# Demo settings
+demo:
+  demo_every: 500
+  max_demos: 10 

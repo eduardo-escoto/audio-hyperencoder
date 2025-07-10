@@ -1,5 +1,6 @@
 ---
 alwaysApply: true
+description: An explanation of hydra configuration management.
 ---
 
 # Configuration Management

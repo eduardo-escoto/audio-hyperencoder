@@ -1,0 +1,24 @@
+# configs/data/hyperencoder.yaml
+# Main hyperencoder data configuration
+
+_target_: hyperencoder.data.latent.LatentsForHyperEncoderDataset
+
+# Dataset configuration
+dataset_type: latents_for_hyperencoder
+split_type: auto
+loading_strategy: lazy
+
+# Data splits
+train_split_pct: 0.8
+val_split_pct: 0.1
+test_split_pct: 0.1
+
+# Data paths
+datasets:
+  - path: /deepfreeze/share_read_only/eduardo/pre_encoded_audio/pre_encoded_sPDMX/data
+
+# Crop configuration
+crop_config:
+  random_crop: true
+  crop_ratio: 8
+  original_crop_length: 47 
