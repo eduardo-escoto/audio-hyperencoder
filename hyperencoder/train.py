@@ -109,10 +109,21 @@ def main():
 
     # Initialize the wandb or comet logger first to get the experiment ID
     if args.logger == "wandb":
-        logger = WandbLogger(
-            project=args.project, name=args.name, save_dir=args.save_dir, 
-            id = args.run_id if args.run_id else None, log_model="all"
-        )
+        wandb_kwargs = {
+            "project": args.project,
+            "name": args.name,
+            "save_dir": args.save_dir
+        }
+        if args.run_id is not None:
+            wandb_kwargs.update([('id', args.run_id)])
+
+        if args.ckpt_name is not None:
+            wandb_kwargs.update([('checkpoint_name', args.ckpt_name)])
+
+        if args.log_model is not None:
+            wandb_kwargs.update([('log_model', args.log_model)])
+
+        logger = WandbLogger(**wandb_kwargs)
         # logger.watch(None)  # Watch can be updated later when the model is created
 
         if args.save_dir and isinstance(logger.experiment.id, str):
