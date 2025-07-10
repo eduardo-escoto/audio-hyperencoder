@@ -1,0 +1,200 @@
+---
+alwaysApply: true
+---
+
+# Work Style
+
+## Codebase Research Philosophy
+
+### Deep Investigation for Questions and Architecture Decisions
+When asked questions about the codebase or when making architectural decisions:
+
+1. **Comprehensive Exploration**: Use semantic search and code analysis tools to thoroughly explore the codebase
+2. **Multiple Search Angles**: Search from different perspectives to understand context, usage patterns, and relationships
+3. **Trace Dependencies**: Follow imports, inheritance, and usage patterns to understand how components interact
+4. **Historical Context**: Look for existing patterns and conventions already established in the project
+5. **Complete Understanding**: Don't stop at the first answer - ensure you have a full picture before responding
+
+### Research Methodology
+- **Start Broad**: Begin with high-level semantic searches to understand overall architecture
+- **Narrow Down**: Focus on specific modules, classes, or functions relevant to the question
+- **Cross-Reference**: Look for related implementations and patterns across the codebase
+- **Validate Understanding**: Verify your conclusions by examining multiple examples and use cases
+- **Document Findings**: Include your research findings in plans or responses to show thorough investigation
+
+## Collaborative Planning Process
+
+### Pre-Implementation Planning
+When any task is requested, follow this structured approach:
+
+1. **Create or Update Plan Files**: Always create or update an existing plan file in `.cursor/plans/` directory
+2. **Technical Documentation**: Treat each plan as a technical document that will receive feedback
+3. **Alignment Before Implementation**: Use plans to align on approach before beginning any coding work
+4. **Pair Programming Model**: Work collaboratively where you act as the manager and I am the superstar engineer
+
+### Plan File Structure
+Each plan file should include:
+
+- **Task Overview**: Clear description of what needs to be accomplished
+- **Technical Analysis**: Your thinking and technical considerations
+- **Implementation Plan**: Step-by-step approach with specific tasks
+- **Questions & Clarifications**: Any questions or areas needing feedback
+- **Dependencies**: What needs to be completed first or what might be affected
+- **Risks & Considerations**: Potential challenges or edge cases
+
+### Plan File Management
+- **File Naming**: Use descriptive names like `feature-hyperencoder-vqvae.md`, `refactor-config-system.md`
+- **Update Existing Plans**: When updating existing plans, always cull outdated information
+- **Mark Outdated Sections**: If keeping old information for context, clearly mark it as `[OUTDATED]`
+- **Version Control**: Keep plans in version control to track evolution of thinking
+
+### Implementation Workflow
+1. **Plan Creation**: Create comprehensive plan with technical details
+2. **Review & Feedback**: Wait for plan review and feedback
+3. **Plan Refinement**: Update plan based on feedback if needed
+4. **Implementation**: Begin coding only after plan approval
+5. **Progress Updates**: Update plan with any discoveries or changes during implementation
+
+### Plan Template Example
+```markdown
+# Feature: [Feature Name]
+
+## Overview
+Brief description of the task or feature
+
+## Technical Analysis
+- Current state analysis
+- Technical considerations
+- Architecture implications
+
+## Implementation Plan
+1. Step 1: Specific task
+2. Step 2: Specific task
+3. Step 3: Specific task
+
+## Questions & Clarifications
+- Question 1
+- Question 2
+
+## Dependencies
+- Dependency 1
+- Dependency 2
+
+## Risks & Considerations
+- Risk 1 and mitigation
+- Risk 2 and mitigation
+
+## Success Criteria
+- How we'll know this is complete
+- Testing approach
+```
+
+### Communication Style
+- **Be Specific**: Include concrete technical details and code examples where helpful
+- **Ask Questions**: Don't hesitate to ask for clarification or additional requirements
+- **Show Alternatives**: Present multiple approaches when applicable
+- **Anticipate Issues**: Think ahead about potential problems and solutions
+- **Document Decisions**: Record the reasoning behind technical choices
+
+This collaborative approach ensures high-quality implementations through thorough planning and clear communication before any code is written.
+- **Document Decisions**: Record the reasoning behind technical choices
+
+This collaborative approach ensures high-quality implementations through thorough planning and clear communication before any code is written.
+# Work Style
+
+## Codebase Research Philosophy
+
+### Deep Investigation for Questions and Architecture Decisions
+When asked questions about the codebase or when making architectural decisions:
+
+1. **Comprehensive Exploration**: Use semantic search and code analysis tools to thoroughly explore the codebase
+2. **Multiple Search Angles**: Search from different perspectives to understand context, usage patterns, and relationships
+3. **Trace Dependencies**: Follow imports, inheritance, and usage patterns to understand how components interact
+4. **Historical Context**: Look for existing patterns and conventions already established in the project
+5. **Complete Understanding**: Don't stop at the first answer - ensure you have a full picture before responding
+
+### Research Methodology
+- **Start Broad**: Begin with high-level semantic searches to understand overall architecture
+- **Narrow Down**: Focus on specific modules, classes, or functions relevant to the question
+- **Cross-Reference**: Look for related implementations and patterns across the codebase
+- **Validate Understanding**: Verify your conclusions by examining multiple examples and use cases
+- **Document Findings**: Include your research findings in plans or responses to show thorough investigation
+
+## Collaborative Planning Process
+
+### Pre-Implementation Planning
+When any task is requested, follow this structured approach:
+
+1. **Create or Update Plan Files**: Always create or update an existing plan file in `.cursor/plans/` directory
+2. **Technical Documentation**: Treat each plan as a technical document that will receive feedback
+3. **Alignment Before Implementation**: Use plans to align on approach before beginning any coding work
+4. **Pair Programming Model**: Work collaboratively where you act as the manager and I am the superstar engineer
+
+### Plan File Structure
+Each plan file should include:
+
+- **Task Overview**: Clear description of what needs to be accomplished
+- **Technical Analysis**: Your thinking and technical considerations
+- **Implementation Plan**: Step-by-step approach with specific tasks
+- **Questions & Clarifications**: Any questions or areas needing feedback
+- **Dependencies**: What needs to be completed first or what might be affected
+- **Risks & Considerations**: Potential challenges or edge cases
+
+### Plan File Management
+- **File Naming**: Use descriptive names like `feature-hyperencoder-vqvae.md`, `refactor-config-system.md`
+- **Update Existing Plans**: When updating existing plans, always cull outdated information
+- **Mark Outdated Sections**: If keeping old information for context, clearly mark it as `[OUTDATED]`
+- **Version Control**: Keep plans in version control to track evolution of thinking
+
+### Implementation Workflow
+1. **Plan Creation**: Create comprehensive plan with technical details
+2. **Review & Feedback**: Wait for plan review and feedback
+3. **Plan Refinement**: Update plan based on feedback if needed
+4. **Implementation**: Begin coding only after plan approval
+5. **Progress Updates**: Update plan with any discoveries or changes during implementation
+
+### Plan Template Example
+```markdown
+# Feature: [Feature Name]
+
+## Overview
+Brief description of the task or feature
+
+## Technical Analysis
+- Current state analysis
+- Technical considerations
+- Architecture implications
+
+## Implementation Plan
+1. Step 1: Specific task
+2. Step 2: Specific task
+3. Step 3: Specific task
+
+## Questions & Clarifications
+- Question 1
+- Question 2
+
+## Dependencies
+- Dependency 1
+- Dependency 2
+
+## Risks & Considerations
+- Risk 1 and mitigation
+- Risk 2 and mitigation
+
+## Success Criteria
+- How we'll know this is complete
+- Testing approach
+```
+
+### Communication Style
+- **Be Specific**: Include concrete technical details and code examples where helpful
+- **Ask Questions**: Don't hesitate to ask for clarification or additional requirements
+- **Show Alternatives**: Present multiple approaches when applicable
+- **Anticipate Issues**: Think ahead about potential problems and solutions
+- **Document Decisions**: Record the reasoning behind technical choices
+
+This collaborative approach ensures high-quality implementations through thorough planning and clear communication before any code is written.
+- **Document Decisions**: Record the reasoning behind technical choices
+
+This collaborative approach ensures high-quality implementations through thorough planning and clear communication before any code is written.

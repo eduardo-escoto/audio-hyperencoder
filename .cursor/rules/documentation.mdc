@@ -1,0 +1,285 @@
+---
+alwaysApply: true
+---
+
+# Documentation Standards
+
+## Code Documentation
+
+### Google-Style Docstrings
+- Use **Google-style docstrings** for all functions, classes, and modules
+- Include clear descriptions of parameters, return values, and exceptions
+- Provide usage examples for complex functions or classes
+- Document type hints in the docstring when they add clarity
+
+#### Function Docstring Example
+```python
+def encode_audio_batch(
+    waveforms: List[torch.Tensor], 
+    sample_rates: List[int],
+    autoencoder: AudioAutoencoder
+) -> torch.Tensor:
+    """Encode a batch of audio waveforms using the provided autoencoder.
+    
+    Args:
+        waveforms: List of audio tensors with shape (channels, samples)
+        sample_rates: Sample rates corresponding to each waveform
+        autoencoder: Trained audio autoencoder model for encoding
+        
+    Returns:
+        Encoded latent representations with shape (batch_size, latent_dim, time_steps)
+        
+    Raises:
+        ValueError: If waveforms and sample_rates have different lengths
+        RuntimeError: If autoencoder fails to encode any waveform
+        
+    Example:
+        >>> waveforms = [torch.randn(2, 44100), torch.randn(2, 44100)]
+        >>> sample_rates = [44100, 44100]
+        >>> encoded = encode_audio_batch(waveforms, sample_rates, autoencoder)
+        >>> print(encoded.shape)  # torch.Size([2, 64, 256])
+    """
+```
+
+#### Class Docstring Example
+```python
+class HyperEncoder(LightningModule):
+    """A nested autoencoder that learns compressed representations of audio latents.
+    
+    This model takes pre-encoded audio latents and further compresses them into
+    a semantic representation space suitable for downstream tasks like generation
+    or classification.
+    
+    Args:
+        config: Configuration object containing model hyperparameters
+        base_autoencoder: The base audio autoencoder to build upon
+        
+    Attributes:
+        encoder: The encoder network that compresses latents
+        decoder: The decoder network that reconstructs latents
+        quantizer: Optional vector quantization layer
+        
+    Example:
+        >>> config = HyperEncoderConfig(latent_dim=64, hidden_dim=256)
+        >>> model = HyperEncoder(config, base_autoencoder)
+        >>> encoded = model.encode(audio_latents)
+    """
+```
+
+### Module Documentation
+- Include module-level docstrings explaining the purpose and scope
+- Document key classes and functions available in the module
+- Provide usage examples at the module level when appropriate
+
+## Repository Documentation
+
+### README Maintenance
+- **Keep README updated**: Always update the README.md when adding new commands, functionality, or workflows
+- **Command Documentation**: Include examples of new CLI commands, scripts, or make targets
+- **Installation Updates**: Update installation instructions when dependencies change
+- **Usage Examples**: Add concrete examples of how to use new features
+- **Configuration Changes**: Document new configuration options and their effects
+
+### README Structure Guidelines
+```markdown
+# Project Title
+Brief description of the project
+
+## Installation
+Step-by-step installation instructions
+
+## Usage
+### Basic Usage
+Common use cases and examples
+
+### Advanced Usage
+Complex workflows and configuration
+
+## Development
+### Running Tests
+### Adding New Features
+### Configuration Management
+
+## Recent Updates
+Link to development log for detailed progress
+```
+
+## Progress Tracking
+
+### Development Log
+- **Maintain a development log** in reverse chronological order (newest entries at top)
+- **Location**: Keep in `DEVELOPMENT_LOG.md` or similar file in the project root
+- **Entry Format**: Date, summary, details, and impact of changes
+- **Regular Updates**: Update after significant milestones, bug fixes, or feature additions
+
+#### Development Log Format
+```markdown
+# Development Log
+
+## 2024-01-15 - Hyperencoder VQVAE Implementation
+- Added vector quantization layer to hyperencoder architecture
+- Implemented rotation trick for improved codebook utilization
+- Updated configuration system to support VQ parameters
+- **Impact**: Improved latent space discretization and generation quality
+
+## 2024-01-10 - Pre-encoding Pipeline Optimization
+- Optimized batch processing for large audio datasets
+- Added progress tracking and resumption capabilities
+- Implemented error handling and logging improvements
+- **Impact**: 3x speedup in data preprocessing, better reliability
+
+## 2024-01-05 - Initial Hyperencoder Architecture
+- Created base hyperencoder model with encoder/decoder structure
+- Integrated with stable-audio-tools autoencoder
+- Set up PyTorch Lightning training framework
+- **Impact**: Established foundation for nested autoencoder research
+```
+
+### Documentation Best Practices
+- **Be Descriptive**: Write docstrings that explain not just what, but why and how
+- **Keep Current**: Update documentation as code changes
+- **Include Examples**: Provide concrete usage examples in docstrings
+- **Cross-Reference**: Link related functions and classes in docstrings
+- **Version Changes**: Document breaking changes and migration paths
+
+This documentation approach ensures code clarity, maintainable repositories, and trackable progress throughout the project lifecycle.# Documentation Standards
+
+## Code Documentation
+
+### Google-Style Docstrings
+- Use **Google-style docstrings** for all functions, classes, and modules
+- Include clear descriptions of parameters, return values, and exceptions
+- Provide usage examples for complex functions or classes
+- Document type hints in the docstring when they add clarity
+
+#### Function Docstring Example
+```python
+def encode_audio_batch(
+    waveforms: List[torch.Tensor], 
+    sample_rates: List[int],
+    autoencoder: AudioAutoencoder
+) -> torch.Tensor:
+    """Encode a batch of audio waveforms using the provided autoencoder.
+    
+    Args:
+        waveforms: List of audio tensors with shape (channels, samples)
+        sample_rates: Sample rates corresponding to each waveform
+        autoencoder: Trained audio autoencoder model for encoding
+        
+    Returns:
+        Encoded latent representations with shape (batch_size, latent_dim, time_steps)
+        
+    Raises:
+        ValueError: If waveforms and sample_rates have different lengths
+        RuntimeError: If autoencoder fails to encode any waveform
+        
+    Example:
+        >>> waveforms = [torch.randn(2, 44100), torch.randn(2, 44100)]
+        >>> sample_rates = [44100, 44100]
+        >>> encoded = encode_audio_batch(waveforms, sample_rates, autoencoder)
+        >>> print(encoded.shape)  # torch.Size([2, 64, 256])
+    """
+```
+
+#### Class Docstring Example
+```python
+class HyperEncoder(LightningModule):
+    """A nested autoencoder that learns compressed representations of audio latents.
+    
+    This model takes pre-encoded audio latents and further compresses them into
+    a semantic representation space suitable for downstream tasks like generation
+    or classification.
+    
+    Args:
+        config: Configuration object containing model hyperparameters
+        base_autoencoder: The base audio autoencoder to build upon
+        
+    Attributes:
+        encoder: The encoder network that compresses latents
+        decoder: The decoder network that reconstructs latents
+        quantizer: Optional vector quantization layer
+        
+    Example:
+        >>> config = HyperEncoderConfig(latent_dim=64, hidden_dim=256)
+        >>> model = HyperEncoder(config, base_autoencoder)
+        >>> encoded = model.encode(audio_latents)
+    """
+```
+
+### Module Documentation
+- Include module-level docstrings explaining the purpose and scope
+- Document key classes and functions available in the module
+- Provide usage examples at the module level when appropriate
+
+## Repository Documentation
+
+### README Maintenance
+- **Keep README updated**: Always update the README.md when adding new commands, functionality, or workflows
+- **Command Documentation**: Include examples of new CLI commands, scripts, or make targets
+- **Installation Updates**: Update installation instructions when dependencies change
+- **Usage Examples**: Add concrete examples of how to use new features
+- **Configuration Changes**: Document new configuration options and their effects
+
+### README Structure Guidelines
+```markdown
+# Project Title
+Brief description of the project
+
+## Installation
+Step-by-step installation instructions
+
+## Usage
+### Basic Usage
+Common use cases and examples
+
+### Advanced Usage
+Complex workflows and configuration
+
+## Development
+### Running Tests
+### Adding New Features
+### Configuration Management
+
+## Recent Updates
+Link to development log for detailed progress
+```
+
+## Progress Tracking
+
+### Development Log
+- **Maintain a development log** in reverse chronological order (newest entries at top)
+- **Location**: Keep in `DEVELOPMENT_LOG.md` or similar file in the project root
+- **Entry Format**: Date, summary, details, and impact of changes
+- **Regular Updates**: Update after significant milestones, bug fixes, or feature additions
+
+#### Development Log Format
+```markdown
+# Development Log
+
+## 2024-01-15 - Hyperencoder VQVAE Implementation
+- Added vector quantization layer to hyperencoder architecture
+- Implemented rotation trick for improved codebook utilization
+- Updated configuration system to support VQ parameters
+- **Impact**: Improved latent space discretization and generation quality
+
+## 2024-01-10 - Pre-encoding Pipeline Optimization
+- Optimized batch processing for large audio datasets
+- Added progress tracking and resumption capabilities
+- Implemented error handling and logging improvements
+- **Impact**: 3x speedup in data preprocessing, better reliability
+
+## 2024-01-05 - Initial Hyperencoder Architecture
+- Created base hyperencoder model with encoder/decoder structure
+- Integrated with stable-audio-tools autoencoder
+- Set up PyTorch Lightning training framework
+- **Impact**: Established foundation for nested autoencoder research
+```
+
+### Documentation Best Practices
+- **Be Descriptive**: Write docstrings that explain not just what, but why and how
+- **Keep Current**: Update documentation as code changes
+- **Include Examples**: Provide concrete usage examples in docstrings
+- **Cross-Reference**: Link related functions and classes in docstrings
+- **Version Changes**: Document breaking changes and migration paths
+
+This documentation approach ensures code clarity, maintainable repositories, and trackable progress throughout the project lifecycle.

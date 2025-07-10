@@ -1,0 +1,209 @@
+---
+alwaysApply: true
+---
+
+# Configuration Management
+
+## Composition-First Philosophy
+
+### Top-Level Configuration Files
+- **Single entry point**: Create one top-level configuration file that composes defaults from all aspects
+- **Clear defaults**: Each top-level config should specify defaults for data, model, training, experiment, etc.
+- **Easy customization**: Users can create custom configurations by overriding specific aspects without touching others
+
+### Top-Level Config Example
+```yaml
+# configs/train.yaml
+defaults:
+  - data: hyperencoder
+  - model: hyperencoder_basic
+  - training: default
+  - experiment: hyperencoder_basic
+  - hydra: default
+
+# Global settings
+project_name: "audio-hyperencoder"
+experiment_name: "baseline_experiment"
+seed: 42
+
+# Override examples (optional)
+# data.batch_size: 64
+# model.latent_dim: 256
+```
+
+## Config Group Organization
+
+### Natural Domain Splits
+Organize configurations into logical groups that match your system architecture:
+
+```
+configs/
+├── data/               # Data loading and preprocessing
+│   ├── hyperencoder.yaml
+│   ├── pre_encoded.yaml
+│   └── audio_raw.yaml
+├── model/              # Model architectures
+│   ├── hyperencoder_basic.yaml
+│   ├── hyperencoder_vqvae.yaml
+│   └── autoencoder.yaml
+├── training/           # Training configurations
+│   ├── default.yaml
+│   ├── debug.yaml
+│   └── distributed.yaml
+├── experiment/         # Complete experiment setups
+│   ├── hyperencoder_basic.yaml
+│   └── hyperencoder_vqvae.yaml
+└── hydra/             # Hydra-specific settings
+    └── default.yaml
+```
+
+### Base Configuration Pattern
+```yaml
+# configs/model/autoencoder.yaml
+_target_: hyperencoder.models.autoencoder.AudioAutoEncoder
+latent_dim: 128
+quantization_levels: 3
+sample_rate: 44100
+encoding_channels: [64, 128, 256]
+learning_rate: 1e-4
+```
+
+## Configuration Inheritance
+
+### Extending Base Configurations
+Create specialized configurations that inherit from base configs and override specific parameters:
+
+```yaml
+# configs/model/better_encoder.yaml
+defaults:
+  - autoencoder
+
+# Override specific parameters
+latent_dim: 256          # Increased from 128
+quantization_levels: 8   # Increased from 3
+learning_rate: 5e-5      # Reduced learning rate
+
+# Add new parameters
+use_attention: true
+dropout_rate: 0.1
+```
+
+### Composition Chains
+```yaml
+# configs/model/production_encoder.yaml
+defaults:
+  - better_encoder  # Inherits from better_encoder, which inherits from autoencoder
+
+# Further customization
+batch_norm: true
+weight_decay: 1e-5
+checkpoint_path: "/path/to/pretrained/weights.pt"
+```
+
+## Advanced Composition Patterns
+
+### Multi-Level Defaults
+```yaml
+# configs/experiment/hyperencoder_vqvae.yaml
+defaults:
+  - base_config
+  - override data: pre_encoded
+  - override model: hyperencoder_vqvae
+  - override training: distributed
+
+experiment:
+  name: "hyperencoder_vqvae_experiment"
+  description: "VQVAE hyperencoder with pre-encoded data"
+  tags: ["vqvae", "hyperencoder", "stable-audio"]
+```
+
+### Conditional Configuration
+```yaml
+# configs/training/adaptive.yaml
+defaults:
+  - default
+
+# Conditional settings based on model type
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  patience: 5
+  factor: 0.5
+
+# Override for specific model types
+model/hyperencoder_vqvae:
+  scheduler:
+    patience: 10  # More patience for VQVAE training
+```
+
+## Configuration Best Practices
+
+### Naming Conventions
+- **Base configs**: Use descriptive names like `autoencoder.yaml`, `hyperencoder.yaml`
+- **Variants**: Use prefixes/suffixes like `better_encoder.yaml`, `autoencoder_large.yaml`
+- **Experiments**: Include model and data info like `hyperencoder_vqvae_pretrained.yaml`
+
+### Documentation in Configs
+```yaml
+# configs/model/hyperencoder_basic.yaml
+# Basic hyperencoder configuration for semantic audio representation learning
+# Suitable for: Initial experiments, debugging, small datasets
+# Performance: ~X GB VRAM, ~Y minutes per epoch
+
+defaults:
+  - base_hyperencoder
+
+_target_: hyperencoder.models.HyperEncoder
+description: "Basic hyperencoder for proof-of-concept experiments"
+
+# Architecture settings
+encoder:
+  layers: [512, 256, 128]
+  activation: "gelu"
+  
+decoder:
+  layers: [128, 256, 512] 
+  activation: "gelu"
+```
+
+### Validation Integration
+```yaml
+# configs/model/validated_config.yaml
+defaults:
+  - base_model
+
+# Use Pydantic models for validation
+_target_: hyperencoder.config.model_config.HyperEncoderConfig
+
+# Parameters with validation
+latent_dim: 128  # Must be power of 2, validated by Pydantic
+batch_size: 32   # Must be positive, validated by Pydantic
+```
+
+## Usage Patterns
+
+### Running Experiments
+```bash
+# Use default composition
+uv run python hyperencoder/train.py
+
+# Override specific aspects
+uv run python hyperencoder/train.py model=better_encoder
+
+# Override multiple aspects
+uv run python hyperencoder/train.py model=hyperencoder_vqvae data=pre_encoded
+
+# Override individual parameters
+uv run python hyperencoder/train.py model.latent_dim=512 training.learning_rate=1e-5
+
+# Use complete experiment config
+uv run python hyperencoder/train.py --config-name=experiment_vqvae_large
+```
+
+### Creating New Configurations
+1. **Identify the aspect**: Determine which config group (data/model/training/experiment)
+2. **Find the base**: Choose the closest existing configuration to inherit from
+3. **Override selectively**: Only specify parameters that differ from the base
+4. **Document clearly**: Add comments explaining the purpose and use case
+5. **Test thoroughly**: Ensure the composition works as expected
+
+This composition approach enables flexible, maintainable, and reusable configuration management while keeping individual config files focused and clean.
