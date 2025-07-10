@@ -1,0 +1,44 @@
+# @package _global_
+# Tempo and velocity auxiliary heads configuration
+# 
+# This is a minimal configuration that focuses on two fundamental musical properties:
+# - Tempo: The speed of the music (BPM)
+# - Velocity: The average volume/intensity of notes
+# 
+# This configuration is ideal for:
+# - Initial testing and validation of auxiliary heads
+# - Experiments focusing on rhythmic and dynamic understanding
+# - Lightweight training with minimal computational overhead
+
+defaults:
+  - base_config
+
+auxiliary_heads:
+  enabled: true
+  validation_enabled: true
+  logging_interval: 50
+  
+  heads:
+    # Tempo prediction (regression)
+    - name: tempo_predictor
+      target_key: tempo_bpm
+      head_type: regression
+      loss_type: mse
+      loss_weight: 0.2
+      target_min: 60.0
+      target_max: 200.0
+      hidden_dims: [256, 128]
+      dropout_rate: 0.1
+      activation: relu
+      
+    # Average velocity prediction (regression)
+    - name: velocity_predictor
+      target_key: average_velocity
+      head_type: regression
+      loss_type: mse
+      loss_weight: 0.2
+      target_min: 0.0
+      target_max: 127.0
+      hidden_dims: [256, 128]
+      dropout_rate: 0.1
+      activation: relu 

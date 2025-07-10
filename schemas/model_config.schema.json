@@ -1,5 +1,5 @@
 {
-  "$comment": "Generated from hyperencoder.config.model_config.ModelConfig",
+  "$comment": "Generated from hyperencoder.datamodels.model_config.ModelConfig",
   "$defs": {
     "BottleneckConfig": {
       "additionalProperties": false,

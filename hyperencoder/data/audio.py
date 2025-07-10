@@ -1,4 +1,3 @@
-from typing import Union, Optional
 from pathlib import Path
 
 from regex import compile as re_compile
@@ -20,7 +19,7 @@ class AudioDataset(Dataset):
         self.file_paths: list[Path] = list(file_paths)
 
         self.sample_rates: list[int] = []
-        self.audio_tensors: Optional[list[Tensor]] = []
+        self.audio_tensors: list[Tensor] | None = []
         self.valid_paths = []
 
         self.erred_idxs = []
@@ -63,16 +62,16 @@ class AudioDataset(Dataset):
 class AudioDataModule(LightningDataModule):
     def __init__(
         self,
-        data_dir: Union[Path, str],
+        data_dir: Path | str,
         batch_size: int = 1,
         num_workers: int = 4,
         file_pattern: str = r".*\.wav$",
-        group_pattern: Optional[str] = r"Track\d*",
+        group_pattern: str | None = r"Track\d*",
         lazy_load: bool = False,
         train_split: float = 0.8,
         val_split: float = 0.1,
         test_split: float = 0.1,
-        seed: Optional[int] = 42,
+        seed: int | None = 42,
     ):
         super().__init__()
         self.data_dir = Path(data_dir) if isinstance(data_dir, str) else data_dir
@@ -97,7 +96,7 @@ class AudioDataModule(LightningDataModule):
                 self.file_paths, self.group_pattern
             )
 
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: str | None = None):
         self.file_paths = list(self.data_dir.glob("*.wav"))
         dataset = AudioDataset(self.file_paths, lazy_load=self.lazy_load)
 

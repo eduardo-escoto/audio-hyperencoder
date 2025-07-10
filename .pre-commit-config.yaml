@@ -16,6 +16,7 @@ repos:
         files: "^hyperencoder/"
         types: [python]
         args: [--fix]
+  
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
     rev: 0.5.22
@@ -26,3 +27,32 @@ repos:
       # Dev requirements
       - id: uv-export
         args: [--group, dev, --output-file, requirements-dev.txt]
+  
+  # Hyperencoder configuration management
+  - repo: local
+    hooks:
+      - id: clean-generated-files
+        name: Clean generated configs and schemas
+        entry: uv run hyperencoder-utils clean all --dry-run
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        verbose: true
+      
+      - id: generate-schemas
+        name: Generate JSON schemas
+        entry: uv run hyperencoder-utils generate schemas --output-dir ./hyperencoder-configs
+        language: system
+        pass_filenames: false
+        files: 'hyperencoder/datamodels/.*\.py$'
+        stages: [pre-commit]
+        verbose: true
+      
+      - id: validate-configs
+        name: Validate configuration files
+        entry: bash -c 'find ./hyperencoder-configs -name "*.yaml" -type f | head -5 | xargs -I {} sh -c "echo \"Validating: {}\"; uv run python -c \"import yaml; yaml.safe_load(open(\"{}\").read()); print(\"✅ Valid YAML: {}\")\" || echo \"❌ Invalid YAML: {}\""'
+        language: system
+        pass_filenames: false
+        files: '(hyperencoder/datamodels/.*\.py$|configs/.*\.yaml$)'
+        stages: [pre-commit]
+        verbose: true 

@@ -1,5 +1,5 @@
 {
-  "$comment": "Generated from hyperencoder.config.pre_encode_config.PreEncodeConfig",
+  "$comment": "Generated from hyperencoder.datamodels.pre_encode_config.PreEncodeConfig",
   "$id": "https://hyperencoder.ai/schemas/pre_encode_config.schema.json",
   "additionalProperties": false,
   "description": "Configuration for pre-encoding audio files to latents.\n\nThis configuration controls the pre-encoding process that converts audio files\nto latent representations using stable-audio-tools pretrained models.",
@@ -73,6 +73,7 @@
       "title": "Hf Token"
     },
     "input_dir": {
+      "default": "./data/audio",
       "description": "Directory containing audio files to encode",
       "examples": [
         "/path/to/audio/files",
@@ -110,6 +111,7 @@
       "type": "integer"
     },
     "output_dir": {
+      "default": "./data/encoded",
       "description": "Directory to save encoded latent files",
       "examples": [
         "/path/to/output",
@@ -141,10 +143,6 @@
       "type": "boolean"
     }
   },
-  "required": [
-    "input_dir",
-    "output_dir"
-  ],
   "title": "PreEncodeConfig",
   "type": "object"
 }

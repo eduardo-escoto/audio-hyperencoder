@@ -23,6 +23,7 @@ description: An exploration of preferred tooling and programming paradigms.
 - **`typer`** & **`rich`**: Building elegant utility entrypoints and CLI interfaces for the package/project
 - **`pydantic`**: Data validation and settings management with type safety
 - **`pytest`**: Comprehensive testing framework for unit and integration tests
+- **type hints**: You try to use type hints as much as possible wherever you can as long as they are descriptive.
 
 ## Programming Paradigms
 
@@ -45,6 +46,8 @@ description: An exploration of preferred tooling and programming paradigms.
 - All ML experiments should be reproducible through configuration files
 - Use Pydantic's `Field()` for documentation and additional validation
 - Centralize complex validation logic in custom validators within the models
+- Use 3.10 language features as much as possible. Note that 3.10 introduces many typehint updates that you shoudln't ignore.
+- Try to ensure that lines are less than 88 characters in length.
 
 This approach ensures type safety, automatic validation, and clear separation of concerns while maintaining flexibility through configuration-driven development.# Tools and Programming Paradigms
 

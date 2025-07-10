@@ -1,0 +1,84 @@
+{
+  "$comment": "Generated from hyperencoder.datamodels.model_config.BottleneckConfig",
+  "$id": "https://hyperencoder.ai/schemas/bottleneck_config.schema.json",
+  "additionalProperties": false,
+  "description": "Configuration for bottleneck architecture.",
+  "properties": {
+    "_target_": {
+      "default": "hyperencoder.models.bottlenecks.FSQBottleneck",
+      "description": "Target bottleneck class",
+      "examples": [
+        "hyperencoder.models.bottlenecks.FSQBottleneck",
+        "hyperencoder.models.bottlenecks.VQBottleneck",
+        "hyperencoder.models.bottlenecks.NoBottleneck"
+      ],
+      "title": "Target",
+      "type": "string"
+    },
+    "codebook_size": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Size of codebook for VQ bottleneck",
+      "title": "Codebook Size"
+    },
+    "commitment_loss_weight": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Weight for commitment loss in VQ",
+      "title": "Commitment Loss Weight"
+    },
+    "levels": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": [
+        8,
+        5,
+        5,
+        5
+      ],
+      "description": "Quantization levels for FSQ bottleneck",
+      "title": "Levels"
+    },
+    "num_quantizers": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Number of quantizers for VQ bottleneck",
+      "title": "Num Quantizers"
+    }
+  },
+  "title": "BottleneckConfig",
+  "type": "object"
+}

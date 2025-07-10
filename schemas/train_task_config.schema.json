@@ -1,0 +1,74 @@
+{
+  "$comment": "Generated from hyperencoder.datamodels.hydra_config.TrainTaskConfig",
+  "$id": "https://hyperencoder.ai/schemas/train_task_config.schema.json",
+  "additionalProperties": false,
+  "description": "Configuration for train.yaml - complete training task configuration.",
+  "properties": {
+    "defaults": {
+      "default": [
+        {
+          "/data": "default"
+        },
+        {
+          "/model": "default"
+        },
+        {
+          "/training": "default"
+        },
+        {
+          "/hydra": "default"
+        },
+        "_self_"
+      ],
+      "description": "Complete training task configuration composition",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "title": "Defaults",
+      "type": "array"
+    },
+    "description": {
+      "default": "Basic hyperencoder experiment with default settings",
+      "description": "Description of the task",
+      "title": "Description",
+      "type": "string"
+    },
+    "experiment_name": {
+      "default": "baseline_experiment",
+      "description": "Name of the experiment",
+      "title": "Experiment Name",
+      "type": "string"
+    },
+    "project_name": {
+      "default": "audio-hyperencoder",
+      "description": "Name of the project",
+      "title": "Project Name",
+      "type": "string"
+    },
+    "seed": {
+      "default": 42,
+      "description": "Random seed for reproducibility",
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "task": {
+      "default": "train",
+      "description": "Task to execute",
+      "title": "Task",
+      "type": "string"
+    }
+  },
+  "title": "TrainTaskConfig",
+  "type": "object"
+}

@@ -1,0 +1,59 @@
+bottleneck:
+  codebook_size: null
+  commitment_loss_weight: null
+  levels:
+  - 8
+  - 5
+  - 5
+  - 5
+  num_quantizers: null
+  target_: hyperencoder.models.bottlenecks.FSQBottleneck
+decoder:
+  c_mults:
+  - 16
+  - 8
+  - 4
+  - 2
+  - 2
+  channels: 4
+  final_tanh: false
+  latent_dim: 4
+  out_channels: 64
+  strides:
+  - 8
+  - 8
+  - 4
+  - 4
+  - 1
+  target_: hyperencoder.models.decoders.OobleckDecoder
+  use_snake: false
+demo:
+  demo_every: 20
+  demo_length: null
+  max_demos: 10
+  save_demos: true
+encoder:
+  c_mults:
+  - 16
+  - 8
+  - 4
+  - 2
+  - 2
+  channels: 4
+  in_channels: 64
+  latent_dim: 4
+  strides:
+  - 8
+  - 8
+  - 4
+  - 4
+  - 1
+  target_: hyperencoder.models.encoders.OobleckEncoder
+  use_snake: false
+in_channels: 64
+latent_dim: 4
+out_channels: 64
+sample_rate: null
+target_: hyperencoder.models.hyperencoder.HyperEncoder
+training:
+  optimizer_configs: {}

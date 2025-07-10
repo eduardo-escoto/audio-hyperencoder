@@ -1,0 +1,9 @@
+defaults:
+- _self_
+job:
+  name: hyperencoder_${hydra:runtime.choices.model}
+run:
+  dir: outputs/${now:%Y-%m-%d_%H-%M-%S}
+sweep:
+  dir: multirun/${now:%Y-%m-%d_%H-%M-%S}
+  subdir: ${hydra:job.num}

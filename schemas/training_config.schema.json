@@ -1,5 +1,5 @@
 {
-  "$comment": "Generated from hyperencoder.config.training.TrainingConfig",
+  "$comment": "Generated from hyperencoder.datamodels.training.TrainingConfig",
   "$id": "https://hyperencoder.ai/schemas/training_config.schema.json",
   "additionalProperties": false,
   "description": "Configuration for training hyperencoder models.\n\nThis replaces the hyperencoder/defaults/train_defaults.ini file\nwith a modern, type-safe, validated configuration system.",
@@ -126,7 +126,7 @@
       "title": "Model Config Path"
     },
     "name": {
-      "default": "hyperencoder_experiment",
+      "default": "vqvae_hyperencoder",
       "description": "Name of the training run for logging and checkpointing",
       "examples": [
         "vqvae_rotation_trick_hyperencoder",

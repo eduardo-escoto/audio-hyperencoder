@@ -1,50 +1,30 @@
-# Default training configuration for hyperencoder
-# This file defines the default values for training that will be
-# loaded into our TrainingConfig Pydantic model
-
-# Run identification
-name: hyperencoder_experiment
-project: hyperencoder
-
-# Training hyperparameters
-batch_size: 32
-num_workers: 8
-seed: 42
 accum_batches: 1
-
-# Hardware configuration
-num_nodes: 1
-devices: auto
-strategy: auto
-precision: 16-mixed
-persistent_workers: false
-
-# Checkpointing and validation
+batch_size: 32
 checkpoint_every: 1
-val_every: -1
-save_top_k: 20
-recover: false
-
-# Optimization
-gradient_clip_val: 0.0
-
-# Paths - these will be resolved at runtime
-model_config_path: null
-dataset_config: null
-val_dataset_config: null
-save_dir: null
-
-# Resume/checkpoint paths
+ckpt_name: null
 ckpt_path: null
+dataset_config: null
+devices: auto
+gradient_clip_val: 0.0
+learning_rate: 0.0001
+log_every_n_steps: 1
+logger: wandb
+max_epochs: 10000000
+model_config_path: null
+name: vqvae_hyperencoder
+num_nodes: 1
+num_workers: 8
+persistent_workers: false
+precision: 16-mixed
 pretrained_ckpt_path: null
 pretransform_ckpt_path: null
-
-# Training metadata
+project: hyperencoder
+recover: false
+remove_pretransform_weight_norm: false
 run_id: null
-ckpt_name: null
-
-# Logging
-logger: wandb
-
-# Legacy options
-remove_pretransform_weight_norm: false 
+save_dir: null
+save_top_k: 20
+seed: 42
+strategy: auto
+val_dataset_config: null
+val_every: -1

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 
 from torch.nn import Module as TorchModule
 from lightning import LightningModule
@@ -49,8 +48,8 @@ class LatentHyperencoder(LightningModule):
         hyper_latent_dim: int = 4,
         autoencoder_type: EncoderDecoderTypes = EncoderDecoderTypes.OOBLECK,
         bottleneck_type: BottleneckTypes = BottleneckTypes.FSQ,
-        bottleneck_kwargs: Union[dict, None] = None,
-        autoencoder_kwargs: Union[dict, None] = None,
+        bottleneck_kwargs: dict | None = None,
+        autoencoder_kwargs: dict | None = None,
     ):
         Encoder, Decoder = autoencoder_type.get_encoder_decoder()
         Bottleneck = bottleneck_type.get_bottleneck()

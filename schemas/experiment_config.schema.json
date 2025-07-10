@@ -1,0 +1,87 @@
+{
+  "$comment": "Generated from hyperencoder.datamodels.hydra_config.ExperimentConfig",
+  "$id": "https://hyperencoder.ai/schemas/experiment_config.schema.json",
+  "additionalProperties": false,
+  "description": "DEPRECATED: Legacy experiment configuration. Use TrainTaskConfig instead.",
+  "properties": {
+    "defaults": {
+      "default": [
+        {
+          "/data": "default"
+        },
+        {
+          "/model": "default"
+        },
+        {
+          "/training": "default"
+        },
+        {
+          "/hydra": "default"
+        },
+        "_self_"
+      ],
+      "description": "DEPRECATED: Legacy experiment configuration composition",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "title": "Defaults",
+      "type": "array"
+    },
+    "description": {
+      "default": "Basic hyperencoder experiment with default settings",
+      "description": "Description of the experiment",
+      "title": "Description",
+      "type": "string"
+    },
+    "experiment_name": {
+      "default": "baseline_experiment",
+      "description": "Name of the experiment run",
+      "title": "Experiment Name",
+      "type": "string"
+    },
+    "name": {
+      "default": "hyperencoder_basic_experiment",
+      "description": "Name of the experiment",
+      "title": "Name",
+      "type": "string"
+    },
+    "project_name": {
+      "default": "audio-hyperencoder",
+      "description": "Name of the project",
+      "title": "Project Name",
+      "type": "string"
+    },
+    "seed": {
+      "default": 42,
+      "description": "Random seed for reproducibility",
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "tags": {
+      "default": [
+        "basic",
+        "hyperencoder",
+        "baseline"
+      ],
+      "description": "Tags for organizing experiments",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    }
+  },
+  "title": "ExperimentConfig",
+  "type": "object"
+}

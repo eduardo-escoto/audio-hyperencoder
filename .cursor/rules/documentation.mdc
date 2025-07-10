@@ -248,28 +248,29 @@ Link to development log for detailed progress
 ## Progress Tracking
 
 ### Development Log
-- **Maintain a development log** in reverse chronological order (newest entries at top)
-- **Location**: Keep in `DEVELOPMENT_LOG.md` or similar file in the project root
-- **Entry Format**: Date, summary, details, and impact of changes
+- **Maintain a development log** Make a new file for each date, in the YYYY-MM-DD format, and read the latest few days worth of development.
+- **Location**: Keep in `dev_log_{YYYY-MM-DD}.md` or similar file in the `.cursor/docs/dev_logs` directory.
+- **Entry Format**: summary, details, and impact of changes
 - **Regular Updates**: Update after significant milestones, bug fixes, or feature additions
+- **Using it to keep up with context** Be sure to re-read the development log when you start working on this project again to remember what we did last time.
 
 #### Development Log Format
 ```markdown
 # Development Log
 
-## 2024-01-15 - Hyperencoder VQVAE Implementation
+## Hyperencoder VQVAE Implementation
 - Added vector quantization layer to hyperencoder architecture
 - Implemented rotation trick for improved codebook utilization
 - Updated configuration system to support VQ parameters
 - **Impact**: Improved latent space discretization and generation quality
 
-## 2024-01-10 - Pre-encoding Pipeline Optimization
+##  Pre-encoding Pipeline Optimization
 - Optimized batch processing for large audio datasets
 - Added progress tracking and resumption capabilities
 - Implemented error handling and logging improvements
 - **Impact**: 3x speedup in data preprocessing, better reliability
 
-## 2024-01-05 - Initial Hyperencoder Architecture
+## Initial Hyperencoder Architecture
 - Created base hyperencoder model with encoder/decoder structure
 - Integrated with stable-audio-tools autoencoder
 - Set up PyTorch Lightning training framework

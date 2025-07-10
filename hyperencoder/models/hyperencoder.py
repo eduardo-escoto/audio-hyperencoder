@@ -1,13 +1,4 @@
-from typing import Any
-import logging
-
-# from icecream import ic
 from torch.nn import Module
-from stable_audio_tools.models.autoencoders import (
-    create_decoder_from_config,
-    create_encoder_from_config,
-    create_bottleneck_from_config,
-)
 
 
 class HyperEncoder(Module):
@@ -71,28 +62,9 @@ class HyperEncoder(Module):
         return outer_latents
 
 
-def create_hyperencoder_from_config(config: dict[str, Any]):
-    ae_config = config["model"]
-
-    encoder = create_encoder_from_config(ae_config["encoder"])
-    decoder = create_decoder_from_config(ae_config["decoder"])
-
-    bottleneck_config = ae_config.get("bottleneck", None)
-
-    latent_dim = ae_config.get("latent_dim", None)
-    assert latent_dim is not None, "latent_dim must be specified in model config"
-
-    in_channels = ae_config.get("in_channels", None)
-    out_channels = ae_config.get("out_channels", None)
-
-    if bottleneck_config is not None:
-        bottleneck = create_bottleneck_from_config(bottleneck_config)
-
-    return HyperEncoder(
-        encoder,
-        decoder,
-        latent_dim=latent_dim,
-        bottleneck=bottleneck,
-        input_channels=in_channels,
-        output_channels=out_channels,
-    )
+# Import factory functions for backward compatibility
+# These functions are now defined in hyperencoder.factories.model_factory
+from ..factories.model_factory import (
+    create_hyperencoder_from_config,
+    create_hyperencoder,
+)

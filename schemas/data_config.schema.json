@@ -1,5 +1,5 @@
 {
-  "$comment": "Generated from hyperencoder.config.data_config.DataConfig",
+  "$comment": "Generated from hyperencoder.datamodels.data_config.DataConfig",
   "$defs": {
     "CropConfig": {
       "additionalProperties": false,
@@ -85,6 +85,14 @@
       ],
       "title": "Target",
       "type": "string"
+    },
+    "batch_size": {
+      "default": 32,
+      "description": "Number of samples per batch",
+      "maximum": 512,
+      "minimum": 1,
+      "title": "Batch Size",
+      "type": "integer"
     },
     "cache_dir": {
       "anyOf": [
@@ -173,6 +181,14 @@
       "title": "Normalize",
       "type": "boolean"
     },
+    "num_workers": {
+      "default": 8,
+      "description": "Number of CPU workers for the DataLoader",
+      "maximum": 32,
+      "minimum": 0,
+      "title": "Num Workers",
+      "type": "integer"
+    },
     "path": {
       "anyOf": [
         {
@@ -185,6 +201,19 @@
       "default": null,
       "description": "Single dataset path (alternative to datasets list)",
       "title": "Path"
+    },
+    "persistent_workers": {
+      "default": false,
+      "description": "Whether to keep DataLoader workers persistent between epochs",
+      "title": "Persistent Workers",
+      "type": "boolean"
+    },
+    "random_seed": {
+      "default": 42,
+      "description": "Random seed for reproducibility in data loading",
+      "minimum": 0,
+      "title": "Random Seed",
+      "type": "integer"
     },
     "recursive": {
       "default": true,

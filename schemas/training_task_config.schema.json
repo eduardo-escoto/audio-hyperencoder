@@ -1,0 +1,40 @@
+{
+  "$comment": "Generated from hyperencoder.datamodels.hydra_config.TrainingTaskConfig",
+  "$id": "https://hyperencoder.ai/schemas/training_task_config.schema.json",
+  "additionalProperties": false,
+  "description": "DEPRECATED: Legacy training task configuration. Use TrainTaskConfig instead.",
+  "properties": {
+    "defaults": {
+      "default": [
+        {
+          "experiment": "default"
+        },
+        "_self_"
+      ],
+      "description": "DEPRECATED: Legacy task configuration composition",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "title": "Defaults",
+      "type": "array"
+    },
+    "task": {
+      "default": "train",
+      "description": "Training task",
+      "title": "Task",
+      "type": "string"
+    }
+  },
+  "title": "TrainingTaskConfig",
+  "type": "object"
+}
