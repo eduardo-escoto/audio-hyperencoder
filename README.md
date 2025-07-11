@@ -1,8 +1,8 @@
 # Audio Hyperencoder
 
-A research project for learning semantic representations of music and audio using nested auto-encoders (hyperencoders). Built on top of Stability AI's `stable-audio-tools` with modern configuration management.
+A research project for learning semantic representations of music and audio using nested auto-encoders (hyperencoders). Built on top of Stability AI's `stable-audio-tools` with Hydra configuration management.
 
-## 🎯 **Modern Configuration Architecture**
+## 🎯 **Configuration Architecture**
 
 This project uses **Hydra** for configuration management with a clean task-based system:
 
@@ -16,53 +16,42 @@ This project uses **Hydra** for configuration management with a clean task-based
 
 ## 🚀 **Quick Start**
 
+### Installation
+
+```bash
+# Install dependencies
+uv sync --all-extras
+
+# Install pre-commit hooks
+uv run pre-commit install
+```
+
 ### Training
 
 ```bash
 # Basic training with default configuration
-uv run python -m hyperencoder.cli.main
+uv run hyperencoder
 
 # Training with component overrides
-uv run python -m hyperencoder.cli.main model=custom_model
-uv run python -m hyperencoder.cli.main data.batch_size=64
+uv run hyperencoder model=custom_model
+uv run hyperencoder data.batch_size=64
 ```
 
 ### Pre-encoding
 
 ```bash
 # Basic pre-encoding
-uv run python -m hyperencoder.cli.main --config-name=pre_encode \
+uv run hyperencoder --config-name=pre_encode \
   pre_encode.input_dir="/path/to/audio/files" \
   pre_encode.output_dir="/path/to/encoded/output"
 
 # Pre-encoding with overrides
-uv run python -m hyperencoder.cli.main --config-name=pre_encode \
+uv run hyperencoder --config-name=pre_encode \
   pre_encode.input_dir="/path/to/audio/files" \
   pre_encode.output_dir="/path/to/encoded/output" \
   pre_encode.n_devices=2 \
   pre_encode.batch_size=4
 ```
-
-## 🛠️ **Development Tools**
-
-### Configuration Management
-
-```bash
-# Generate configuration files for customization
-uv run python -m hyperencoder.cli.utils generate configs
-
-# Generate JSON schemas for IDE support
-uv run python -m hyperencoder.cli.utils generate schemas
-
-# Show project information
-uv run python -m hyperencoder.cli.utils info
-```
-
-### Configuration Customization
-
-1. **Generate configs**: `uv run python -m hyperencoder.cli.utils generate configs`
-2. **Edit generated files**: Modify configs in `./hyperencoder-configs/`
-3. **Use custom configs**: `uv run python -m hyperencoder.cli.main --config-path=./hyperencoder-configs`
 
 ## 📋 **Configuration Details**
 
@@ -125,13 +114,13 @@ The hyperencoder supports **auxiliary heads** for multi-task learning on MIDI me
 
 ```bash
 # Training with basic song-level features (tempo, velocity, duration, etc.)
-uv run python -m hyperencoder.cli.main auxiliary_heads=basic_song_level
+uv run hyperencoder auxiliary_heads=basic_song_level
 
 # Training with just tempo and velocity prediction
-uv run python -m hyperencoder.cli.main auxiliary_heads=tempo_velocity
+uv run hyperencoder auxiliary_heads=tempo_velocity
 
 # Enable auxiliary heads with custom settings
-uv run python -m hyperencoder.cli.main auxiliary_heads.enabled=true auxiliary_heads.logging_interval=50
+uv run hyperencoder auxiliary_heads.enabled=true auxiliary_heads.logging_interval=50
 ```
 
 ### Auxiliary Head Types
@@ -269,13 +258,13 @@ WANDB_API_KEY=your_wandb_key
 
 ```bash
 # Multirun experiments
-uv run python -m hyperencoder.cli.main --multirun model=basic,vqvae data.batch_size=32,64
-
-# Tab completion (after shell setup)
-uv run python -m hyperencoder.cli.main model=<TAB>
+uv run hyperencoder --multirun model=basic,vqvae data.batch_size=32,64
 
 # Configuration composition
-uv run python -m hyperencoder.cli.main model=custom_model training.batch_size=64
+uv run hyperencoder model=custom_model training.batch_size=64
+
+# Override any configuration value
+uv run hyperencoder training.learning_rate=0.001 model.latent_dim=512
 ```
 
 ### Output Management
@@ -285,10 +274,43 @@ Hydra automatically manages output directories:
 - Contains: logs, configs, model checkpoints
 - Access via `${hydra:runtime.output_dir}` in configs
 
+## 🛠️ **Development**
+
+### Make Commands
+
+```bash
+# Setup development environment
+make install
+
+# Run training
+make train
+
+# Run pre-encoding
+make pre-encode
+
+# Code quality
+make lint
+make format
+make test
+
+# Clean outputs
+make clean
+```
+
+### Configuration Customization
+
+Edit configuration files directly in the `configs/` directory:
+
+- `configs/train.yaml` - Main training configuration
+- `configs/pre_encode.yaml` - Pre-encoding configuration
+- `configs/data/default.yaml` - Dataset settings
+- `configs/model/default.yaml` - Model architecture
+- `configs/training/default.yaml` - Training parameters
+
 ## 🏗️ **Architecture**
 
 - **Hyperencoder Models**: Nested autoencoders in `hyperencoder/models/`
 - **Data Loading**: Audio and latent data modules in `hyperencoder/data/`
-- **Configuration**: Pydantic models with Hydra integration in `hyperencoder/datamodels/`
-- **CLI**: Modern CLI with task dispatch in `hyperencoder/cli/`
+- **CLI**: Hydra-based CLI with task dispatch in `hyperencoder/cli/`
 - **Training**: PyTorch Lightning training framework in `hyperencoder/training/`
+- **Configuration**: Hydra configuration management in `configs/`
