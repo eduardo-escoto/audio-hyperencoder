@@ -1,185 +1,240 @@
-from typing import Any
-from pathlib import Path
-from collections import defaultdict
-from collections.abc import Generator
+"""
+Data utility functions for hyperencoder.
 
-from regex import Pattern
-from torch import Tensor, stack, squeeze
+This module provides utility functions for creating data loaders and data modules
+for hyperencoder training and evaluation.
+"""
+
+from typing import Any, Dict, List, Optional, Union
+from omegaconf import DictConfig
 from lightning import LightningDataModule
 
-from hyperencoder.datamodels import DataConfig
 
-from .latent import LatentLoadStrategy, PreEncodedLatentDataModule
-
-
-def collate_dicts(dicts: list[dict[str, Any]]) -> dict[str, Any]:
-    dict_types = {key: type(value) for key, value in dicts[0].items()}
-    out_dict = {}
-    for key, t in dict_types.items():
-        collated = [
-            squeeze(dict_item[key]) if t is Tensor else dict_item[key]
-            for dict_item in dicts
-        ]
-        if t is Tensor:
-            collated = stack(collated)
-        out_dict[key] = collated
-
-    return out_dict
-
-
-def get_file_paths_by_pattern(
-    directory: Path | str, filename_pattern: Pattern[str]
-) -> Generator[Path, None, None]:
-    search_dir = Path(directory) if isinstance(directory, str) else directory
-
-    for file in search_dir.rglob("*"):
-        if filename_pattern.match(file.name):
-            yield file
-
-
-def group_paths_by_pattern(
-    file_paths: list[Path], group_pattern: Pattern[str]
-) -> dict[str, list[Path]]:
-    group_dict: dict[str, list[Path]] = defaultdict(list)
-
-    for file_path in file_paths:
-        search_res = group_pattern.search(str(file_path))
-        if search_res is not None:
-            group_key = search_res.group()
-            group_dict[group_key].append(file_path)
-        else:
-            raise FileNotFoundError()
-
-    return group_dict
-
-
-def create_datamodule_from_config(config: DataConfig) -> LightningDataModule:
-    """Create a Lightning DataModule from a Pydantic data configuration.
+def create_datamodule_from_config(config: DictConfig) -> LightningDataModule:
+    """Create a Lightning DataModule from a Hydra configuration.
 
     Args:
-        config: DataConfig containing all data loading parameters
+        config: DictConfig containing all data loading parameters
 
     Returns:
         Configured LightningDataModule instance
 
     Examples:
-        >>> from hyperencoder.datamodels import DataConfig
-        >>> config = DataConfig()  # Uses all defaults
+        >>> from omegaconf import DictConfig
+        >>> config = DictConfig({"batch_size": 32, "num_workers": 4})
         >>> datamodule = create_datamodule_from_config(config)
-        >>>
-        >>> # Or with custom parameters
-        >>> config = DataConfig(batch_size=64, num_workers=16)
-        >>> datamodule = create_datamodule_from_config(config)
+        >>> print(f"Batch size: {datamodule.batch_size}")
     """
-    # Convert loading strategy from string to enum
-    loading_strategy = LatentLoadStrategy(config.loading_strategy)
+    # Import here to avoid circular imports
+    from .latent import PreEncodedLatentDataModule
+    
+    # Create the datamodule with config parameters
+    return PreEncodedLatentDataModule(
+        train_tuples=None,  # Will be populated based on config
+        val_tuples=None,
+        test_tuples=None,
+        predict_tuples=None,
+        batch_size=config.get("batch_size", 32),
+        num_workers=config.get("num_workers", 4),
+        # Add other parameters as needed
+    )
 
-    if config.dataset_type == "latents_for_hyperencoder":
-        assert config.datasets is not None and len(config.datasets) > 0, (
-            "Dataset entries must be specified for latents_for_hyperencoder"
-        )
 
-        if config.split_type == "auto":
-            configs = []
-            for dataset_entry in config.datasets:
-                d_config = {"path": str(dataset_entry.path)}
-                configs.append(d_config)
+def create_dataloader(
+    dataset_path: str,
+    batch_size: int = 32,
+    num_workers: int = 4,
+    shuffle: bool = True,
+    pin_memory: bool = True,
+    persistent_workers: bool = True,
+    **kwargs,
+):
+    """Create a data loader for hyperencoder data.
 
-            return PreEncodedLatentDataModule.from_single_dataset_splits(
-                configs,
-                batch_size=config.batch_size,
-                num_workers=config.num_workers,
-                random_seed=config.random_seed,
-                loading_strategy=loading_strategy,
-                persistent_workers=config.persistent_workers,
-                crop_config=config.crop_config.model_dump()
-                if config.crop_config
-                else None,
-                train_split_pct=config.train_split_pct,
-                val_split_pct=config.val_split_pct,
-                test_split_pct=config.test_split_pct,
-            )
-        else:
-            # Manual split - handle differently since datasets need split assignment
-            # For now, we'll implement this when we have examples of manual split usage
-            raise NotImplementedError(
-                "Manual split not yet implemented for Pydantic DataConfig"
-            )
-    else:
-        raise ValueError(f"Unknown dataset type: {config.dataset_type}")
+    Args:
+        dataset_path: Path to the dataset
+        batch_size: Batch size for training
+        num_workers: Number of worker processes for data loading
+        shuffle: Whether to shuffle the data
+        pin_memory: Whether to pin memory for GPU transfer
+        persistent_workers: Whether to keep workers alive between epochs
+        **kwargs: Additional arguments passed to the data loader
+
+    Returns:
+        Configured DataLoader instance
+
+    Examples:
+        >>> loader = create_dataloader("/path/to/dataset", batch_size=64)
+        >>> print(f"Batch size: {loader.batch_size}")
+    """
+    from torch.utils.data import DataLoader
+    from .latent import PreEncodedLatentDataset
+    
+    # Create dataset
+    dataset = PreEncodedLatentDataset.from_parent_dirs([dataset_path], **kwargs)
+    
+    # Create data loader
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=shuffle,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
+    )
+
+
+def create_train_val_dataloaders(
+    dataset_path: str,
+    batch_size: int = 32,
+    num_workers: int = 4,
+    val_split: float = 0.2,
+    random_seed: int = 42,
+    **kwargs,
+):
+    """Create training and validation data loaders.
+
+    Args:
+        dataset_path: Path to the dataset
+        batch_size: Batch size for training
+        num_workers: Number of worker processes
+        val_split: Fraction of data to use for validation
+        random_seed: Random seed for reproducible splits
+        **kwargs: Additional arguments
+
+    Returns:
+        Tuple of (train_loader, val_loader)
+
+    Examples:
+        >>> train_loader, val_loader = create_train_val_dataloaders("/path/to/dataset")
+        >>> print(f"Train batches: {len(train_loader)}")
+        >>> print(f"Val batches: {len(val_loader)}")
+    """
+    from torch.utils.data import DataLoader, random_split
+    from .latent import PreEncodedLatentDataset
+    import torch
+    
+    # Set random seed for reproducible splits
+    torch.manual_seed(random_seed)
+    
+    # Create dataset
+    dataset = PreEncodedLatentDataset.from_parent_dirs([dataset_path], **kwargs)
+    
+    # Calculate split sizes
+    total_size = len(dataset)
+    val_size = int(val_split * total_size)
+    train_size = total_size - val_size
+    
+    # Split dataset
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    
+    # Create data loaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=True,
+        pin_memory=True,
+        persistent_workers=num_workers > 0,
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=False,
+        pin_memory=True,
+        persistent_workers=num_workers > 0,
+    )
+    
+    return train_loader, val_loader
+
+
+def create_split_dataloaders(
+    train_path: str,
+    val_path: str,
+    batch_size: int = 32,
+    num_workers: int = 4,
+    **kwargs,
+):
+    """Create data loaders from separate train/validation datasets.
+
+    Args:
+        train_path: Path to the training dataset
+        val_path: Path to the validation dataset
+        batch_size: Batch size for training
+        num_workers: Number of worker processes
+        **kwargs: Additional arguments
+
+    Returns:
+        Tuple of (train_loader, val_loader)
+
+    Examples:
+        >>> train_loader, val_loader = create_split_dataloaders(
+        ...     "/path/to/train", "/path/to/val"
+        ... )
+    """
+    from torch.utils.data import DataLoader
+    from .latent import PreEncodedLatentDataset
+    
+    # Create datasets
+    train_dataset = PreEncodedLatentDataset.from_parent_dirs([train_path], **kwargs)
+    val_dataset = PreEncodedLatentDataset.from_parent_dirs([val_path], **kwargs)
+    
+    # Create data loaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=True,
+        pin_memory=True,
+        persistent_workers=num_workers > 0,
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=False,
+        pin_memory=True,
+        persistent_workers=num_workers > 0,
+    )
+    
+    return train_loader, val_loader
 
 
 def create_datamodule(
-    dataset_type: str = "latents_for_hyperencoder",
-    split_type: str = "auto",
-    loading_strategy: str = "lazy",
-    train_split_pct: float = 0.8,
-    val_split_pct: float = 0.1,
-    test_split_pct: float = 0.1,
-    datasets: list[dict[str, Any]] | None = None,
-    crop_config: dict[str, Any] | None = None,
+    dataset_config: Dict[str, Any],
     batch_size: int = 32,
-    num_workers: int = 8,
-    random_seed: int = 42,
-    persistent_workers: bool = False,
+    num_workers: int = 4,
+    **kwargs,
 ) -> LightningDataModule:
-    """Create a Lightning DataModule with programmatic parameters.
+    """Create a Lightning DataModule from configuration parameters.
 
     This is a convenience function for users who want to create data modules
     programmatically without using configuration files. All parameters
-    use the same defaults as defined in the DataConfig Pydantic model.
+    use sensible defaults.
 
     Args:
-        dataset_type: Type of dataset to load
-        split_type: How to split the data into train/val/test sets
-        loading_strategy: Strategy for loading data into memory
-        train_split_pct: Percentage of data to use for training
-        val_split_pct: Percentage of data to use for validation
-        test_split_pct: Percentage of data to use for testing
-        datasets: List of dataset configurations
-        crop_config: Optional crop configuration
-        batch_size: Number of samples per batch
-        num_workers: Number of worker processes for data loading
-        random_seed: Random seed for reproducibility
-        persistent_workers: Whether to keep workers alive between epochs
+        dataset_config: Configuration dictionary for the dataset
+        batch_size: Batch size for training
+        num_workers: Number of worker processes
+        **kwargs: Additional arguments
 
     Returns:
         Configured LightningDataModule instance
 
     Examples:
-        >>> # Use all defaults
-        >>> datamodule = create_datamodule()
-        >>>
-        >>> # Custom batch size
-        >>> datamodule = create_datamodule(batch_size=64)
-        >>>
-        >>> # Custom datasets
-        >>> datamodule = create_datamodule(
-        ...     datasets=[{"path": "/path/to/data"}]
-        ... )
+        >>> config = {"dataset_path": "/path/to/data", "crop_length": 32768}
+        >>> datamodule = create_datamodule(config, batch_size=64)
     """
-    # Create a DataConfig with the provided parameters
-    config_dict: dict[str, Any] = {
-        "dataset_type": dataset_type,
-        "split_type": split_type,
-        "loading_strategy": loading_strategy,
-        "train_split_pct": train_split_pct,
-        "val_split_pct": val_split_pct,
-        "test_split_pct": test_split_pct,
+    # Create DictConfig and delegate to config-based factory
+    from omegaconf import DictConfig
+    config_dict = {
         "batch_size": batch_size,
         "num_workers": num_workers,
-        "random_seed": random_seed,
-        "persistent_workers": persistent_workers,
+        **dataset_config,
+        **kwargs,
     }
-
-    if datasets is not None:
-        from hyperencoder.datamodels import DatasetEntry
-
-        config_dict["datasets"] = [DatasetEntry(path=d["path"]) for d in datasets]
-
-    if crop_config is not None:
-        config_dict["crop_config"] = crop_config
-
-    # Create DataConfig and delegate to config-based factory
-    data_config = DataConfig(**config_dict)
+    data_config = DictConfig(config_dict)
     return create_datamodule_from_config(data_config)

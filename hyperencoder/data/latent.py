@@ -15,7 +15,6 @@ from lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader, random_split
 from safetensors.torch import load_file
 
-from hyperencoder.datamodels import MidiMetadataConfig, MidiMetadata
 from .midi_extractor import MidiMetadataExtractor
 from .filename_mapper import FilenameMapper
 
@@ -512,7 +511,7 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         file_tuples: list[tuple[str, EncodedDirectoryInfo]],
         loading_strategy: LatentLoadStrategy = LatentLoadStrategy.LAZY,
         crop_config=None,
-        midi_metadata_config: MidiMetadataConfig | None = None,
+        midi_metadata_config: dict | None = None,
     ):
         """
         Initialize the MIDI-enhanced latent dataset.
@@ -531,7 +530,7 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         self.midi_cache = {}  # Cache for extracted MIDI metadata
         
         # Initialize MIDI processing components if configured
-        if midi_metadata_config and midi_metadata_config.enabled:
+        if midi_metadata_config and midi_metadata_config.get("enabled"):
             self._setup_midi_processing()
     
     def _setup_midi_processing(self):
@@ -541,18 +540,18 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
             
         # Initialize MIDI metadata extractor
         self.midi_extractor = MidiMetadataExtractor(
-            extract_harmony=self.midi_config.extract_harmony,
-            extract_rhythm=self.midi_config.extract_rhythm
+            extract_harmony=self.midi_config.get("extract_harmony"),
+            extract_rhythm=self.midi_config.get("extract_rhythm")
         )
         
         # Initialize filename mapper
         self.filename_mapper = FilenameMapper(
-            default_extension=self.midi_config.default_midi_extension,
-            alternative_extensions=self.midi_config.alternative_extensions
+            default_extension=self.midi_config.get("default_midi_extension"),
+            alternative_extensions=self.midi_config.get("alternative_extensions")
         )
         
         # Set up caching if enabled
-        if self.midi_config.enable_caching:
+        if self.midi_config.get("enable_caching"):
             self._setup_midi_cache()
     
     def _setup_midi_cache(self):
@@ -575,14 +574,14 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         latents, info = super().__getitem__(idx)
         
         # Inject MIDI metadata if configured
-        if self.midi_config and self.midi_config.enabled:
+        if self.midi_config and self.midi_config.get("enabled"):
             midi_metadata = self._extract_midi_metadata(info)
             if midi_metadata:
-                info["midi_metadata"] = midi_metadata.model_dump()
+                info["midi_metadata"] = midi_metadata
         
         return latents, info
     
-    def _extract_midi_metadata(self, info: dict) -> MidiMetadata | None:
+    def _extract_midi_metadata(self, info: dict) -> dict | None:
         """
         Extract MIDI metadata for the current item.
         
@@ -592,7 +591,7 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         Returns:
             MidiMetadata object if extraction successful, None otherwise
         """
-        if not self.midi_config or not self.midi_config.midi_dir:
+        if not self.midi_config or not self.midi_config.get("midi_dir"):
             return None
         
         # Get the latent file path from info
@@ -603,20 +602,20 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         latents_path = Path(latents_path)
         
         # Check cache first if caching is enabled
-        if self.midi_config.enable_caching and str(latents_path) in self.midi_cache:
+        if self.midi_config.get("enable_caching") and str(latents_path) in self.midi_cache:
             return self.midi_cache[str(latents_path)]
         
         # Set up MIDI directory
-        midi_dir = Path(self.midi_config.midi_dir)
+        midi_dir = Path(self.midi_config.get("midi_dir"))
         if not midi_dir.exists():
-            if self.midi_config.fail_on_missing_midi:
+            if self.midi_config.get("fail_on_missing_midi"):
                 raise FileNotFoundError(f"MIDI directory not found: {midi_dir}")
             return None
         
         # Find corresponding MIDI file
         midi_path = self.filename_mapper.find_midi_file(latents_path, midi_dir)
         if not midi_path:
-            if self.midi_config.fail_on_missing_midi:
+            if self.midi_config.get("fail_on_missing_midi"):
                 expected_name = self.filename_mapper.map_latent_to_midi(latents_path)
                 raise FileNotFoundError(
                     f"MIDI file not found for {latents_path}. "
@@ -629,13 +628,13 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
             metadata = self.midi_extractor.extract_metadata(midi_path)
             
             # Cache the result if caching is enabled
-            if self.midi_config.enable_caching:
+            if self.midi_config.get("enable_caching"):
                 self.midi_cache[str(latents_path)] = metadata
             
             return metadata
             
         except Exception as e:
-            if self.midi_config.fail_on_missing_midi:
+            if self.midi_config.get("fail_on_missing_midi"):
                 raise RuntimeError(
                     f"Failed to extract MIDI metadata from {midi_path}: {e}"
                 ) from e
@@ -651,14 +650,14 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         Returns:
             Dictionary with mapping information
         """
-        if not self.midi_config or not self.midi_config.enabled:
+        if not self.midi_config or not self.midi_config.get("enabled"):
             return {"midi_enabled": False}
         
         # Get the latent file path
         latents_path, _ = self.file_tuples[idx]
         latents_path = Path(latents_path)
         
-        midi_dir = Path(self.midi_config.midi_dir) if self.midi_config.midi_dir else None
+        midi_dir = Path(self.midi_config.get("midi_dir")) if self.midi_config.get("midi_dir") else None
         
         if not midi_dir:
             return {"midi_enabled": True, "midi_dir": None, "error": "No MIDI directory configured"}
@@ -676,10 +675,10 @@ class MidiEnhancedLatentDataset(PreEncodedLatentDataset):
         Returns:
             Dictionary with validation results
         """
-        if not self.midi_config or not self.midi_config.enabled:
+        if not self.midi_config or not self.midi_config.get("enabled"):
             return {"midi_enabled": False}
         
-        midi_dir = Path(self.midi_config.midi_dir) if self.midi_config.midi_dir else None
+        midi_dir = Path(self.midi_config.get("midi_dir")) if self.midi_config.get("midi_dir") else None
         
         if not midi_dir or not midi_dir.exists():
             return {

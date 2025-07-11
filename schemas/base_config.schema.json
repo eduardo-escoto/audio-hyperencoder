@@ -1,9 +1,0 @@
-{
-  "$comment": "Generated from hyperencoder.datamodels.base.BaseConfig",
-  "$id": "https://hyperencoder.ai/schemas/base_config.schema.json",
-  "additionalProperties": false,
-  "description": "Base configuration class that all other config classes inherit from.\n\nProvides common functionality like:\n- JSON schema generation\n- Validation\n- Documentation embedding\n- Path resolution",
-  "properties": {},
-  "title": "BaseConfig",
-  "type": "object"
-}

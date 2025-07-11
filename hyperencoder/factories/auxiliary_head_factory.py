@@ -7,13 +7,14 @@ associated losses from configuration objects, following proper separation of con
 
 from typing import Any
 from torch.nn import ModuleDict
+from omegaconf import DictConfig
 
-from ..modules.auxiliary_heads import AuxiliaryHead, AuxiliaryHeadConfig
+from ..modules.auxiliary_heads import AuxiliaryHead
 from ..modules.auxiliary_losses import AuxiliaryLoss
 
 
 def create_auxiliary_heads_from_config(
-    auxiliary_heads_config: dict[str, Any],
+    auxiliary_heads_config: dict[str, Any] | DictConfig,
     latent_dim: int,
 ) -> tuple[ModuleDict, list[AuxiliaryLoss]]:
     """Factory function to create auxiliary heads and losses from configuration.
@@ -41,9 +42,9 @@ def create_auxiliary_heads_from_config(
         return auxiliary_heads, auxiliary_losses
     
     for head_config in heads_config:
-        # Create auxiliary head from config
+        # Create auxiliary head from config dict
         head = AuxiliaryHead(
-            config=AuxiliaryHeadConfig(**head_config),
+            config=head_config,
             input_dim=latent_dim
         )
         
@@ -65,7 +66,7 @@ def create_auxiliary_heads_from_config(
 
 
 def create_auxiliary_head(
-    head_config: dict[str, Any],
+    head_config: dict[str, Any] | DictConfig,
     latent_dim: int,
 ) -> tuple[AuxiliaryHead, AuxiliaryLoss]:
     """Factory function to create a single auxiliary head and its loss.
@@ -81,9 +82,9 @@ def create_auxiliary_head(
         >>> config = {"name": "tempo", "head_type": "regression", "num_classes": 1}
         >>> head, loss = create_auxiliary_head(config, 64)
     """
-    # Create auxiliary head from config
+    # Create auxiliary head from config dict
     head = AuxiliaryHead(
-        config=AuxiliaryHeadConfig(**head_config),
+        config=head_config,
         input_dim=latent_dim
     )
     

@@ -1,196 +1,159 @@
-"""Generation commands for the development utilities CLI.
+"""
+Generate commands for development CLI.
 
-This module provides commands for generating configuration files and JSON schemas.
+This module provides utilities for generating configuration files and other
+development resources for the hyperencoder project.
 """
 
+import logging
 from pathlib import Path
+from typing import Any, Dict
 
-import typer
+from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
-from ..dev_cli import console, generate_app
+console = Console()
+logger = logging.getLogger(__name__)
 
 
-@generate_app.command("configs")
-def generate_configs(
-    output_dir: Path | None = typer.Option(
-        None, help="Output directory (defaults to package configs)"
-    ),
-) -> None:
-    """📄 Generate default configuration files."""
-    # Generate configs using the comprehensive config generation module
-    from ..core.config_generation import generate_all_configs
-
-    console.print("🏗️ Generating configuration files...", style="bold blue")
-
-    try:
-        # Generate all configs - use package directory if no output specified
-        results = generate_all_configs(
-            output_dir=output_dir, console=console, show_progress=True
-        )
-
-        # Exit with error code if any configs failed
-        if results["failed"] > 0:
-            raise typer.Exit(1)
-
-    except ImportError as e:
-        console.print(f"❌ [red]Failed to import config generation module: {e}[/red]")
-        raise typer.Exit(1)
-
-
-@generate_app.command("schemas")
-def generate_schemas(
-    output_dir: Path | None = typer.Option(
-        None, help="Output directory (defaults to package schemas)"
-    ),
-) -> None:
-    """📋 Generate JSON schemas for configuration validation."""
-    # Generate JSON schemas using the comprehensive schema generation module
-    from ..core.schema_generation import generate_all_schemas
-
-    console.print("🏗️ Generating JSON schemas...", style="bold blue")
-
-    try:
-        # Use schemas subdirectory if output_dir is specified
-        schema_output_dir = output_dir / "schemas" if output_dir else None
-
-        # Generate all schemas with progress tracking
-        results = generate_all_schemas(
-            output_dir=schema_output_dir, console=console, show_progress=True
-        )
-
-        # Exit with error code if any schemas failed
-        if results["failed"] > 0:
-            raise typer.Exit(1)
-
-    except ImportError as e:
-        console.print(f"❌ [red]Failed to import schema generation module: {e}[/red]")
-        raise typer.Exit(1)
+def generate_sample_config(output_dir: Path = Path("configs")) -> None:
+    """Generate a sample configuration file.
+    
+    Args:
+        output_dir: Directory to write the sample config to
+    """
+    sample_config = {
+        "model": {
+            "latent_dim": 4,
+            "in_channels": 64,
+            "out_channels": 64,
+            "encoder": {
+                "type": "basic",
+                "hidden_dims": [256, 128, 64]
+            },
+            "decoder": {
+                "type": "basic", 
+                "hidden_dims": [64, 128, 256]
+            }
+        },
+        "training": {
+            "learning_rate": 1e-4,
+            "batch_size": 32,
+            "max_epochs": 100,
+            "optimizer": {
+                "type": "Adam",
+                "betas": [0.9, 0.999],
+                "weight_decay": 0.0
+            }
+        },
+        "data": {
+            "dataset_path": "data/latents",
+            "batch_size": 32,
+            "num_workers": 4
+        }
+    }
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "sample_config.yaml"
+    
+    import yaml
+    with open(output_file, 'w') as f:
+        yaml.dump(sample_config, f, default_flow_style=False, indent=2)
+    
+    console.print(f"✅ Generated sample config: {output_file}")
 
 
-@generate_app.command("all")
-def generate_all(
-    output_dir: Path | None = typer.Option(
-        None, help="Output directory for both configs and schemas"
-    ),
-) -> None:
-    """🚀 Generate both configuration files and JSON schemas."""
-    # Generate both configs and schemas
-    from ..core.config_generation import generate_all_configs
-    from ..core.schema_generation import generate_all_schemas
+def generate_readme_template(output_dir: Path = Path(".")) -> None:
+    """Generate a README template.
+    
+    Args:
+        output_dir: Directory to write the README template to
+    """
+    readme_content = """# Audio Hyperencoder
 
-    console.print("🚀 Generating both configurations and schemas...", style="bold blue")
+A PyTorch Lightning implementation of hyperencoder models for audio representation learning.
 
-    config_results = None
-    schema_results = None
-    overall_success = True
+## Installation
 
-    try:
-        # Generate configs first
-        if output_dir:
-            configs_dir = output_dir / "configs"
-            console.print(
-                f"\n📄 Step 1: Generating configuration files to {configs_dir}...",
-                style="bold cyan",
-            )
-        else:
-            configs_dir = None
-            console.print(
-                "\n📄 Step 1: Generating configuration files to package directory...",
-                style="bold cyan",
-            )
+```bash
+pip install -e .
+```
 
-        config_results = generate_all_configs(
-            output_dir=configs_dir, console=console, show_progress=True
-        )
+## Usage
 
-        if config_results["failed"] > 0:
-            overall_success = False
-            console.print(
-                f"⚠️ Config generation had {config_results['failed']} errors",
-                style="yellow",
-            )
-        else:
-            console.print(
-                "✅ Configuration generation completed successfully!", style="green"
-            )
+### Training
 
-    except Exception as e:
-        console.print(f"❌ [red]Config generation failed: {e}[/red]")
-        overall_success = False
+```bash
+python -m hyperencoder.cli.ml_tasks.train
+```
 
-    try:
-        # Generate schemas second
-        if output_dir:
-            schemas_dir = output_dir / "schemas"
-            console.print(
-                f"\n📋 Step 2: Generating JSON schemas to {schemas_dir}...",
-                style="bold cyan",
-            )
-        else:
-            schemas_dir = None
-            console.print(
-                "\n📋 Step 2: Generating JSON schemas to package directory...",
-                style="bold cyan",
-            )
+### Pre-encoding
 
-        schema_results = generate_all_schemas(
-            output_dir=schemas_dir, console=console, show_progress=True
-        )
+```bash
+python -m hyperencoder.cli.ml_tasks.pre_encode
+```
 
-        if schema_results["failed"] > 0:
-            overall_success = False
-            console.print(
-                f"⚠️ Schema generation had {schema_results['failed']} errors",
-                style="yellow",
-            )
-        else:
-            console.print("✅ Schema generation completed successfully!", style="green")
+## Configuration
 
-    except Exception as e:
-        console.print(f"❌ [red]Schema generation failed: {e}[/red]")
-        overall_success = False
+Configuration is managed through Hydra. See `configs/` directory for examples.
 
-    # Display overall summary
-    if config_results and schema_results:
-        overall_table = Table(title="🎯 Complete Generation Summary")
-        overall_table.add_column("Component", style="cyan")
-        overall_table.add_column("Files Generated", style="green")
-        overall_table.add_column("Status", style="magenta")
+## Development
 
-        config_status = (
-            "✅ Success"
-            if config_results["failed"] == 0
-            else f"⚠️ {config_results['failed']} errors"
-        )
-        schema_status = (
-            "✅ Success"
-            if schema_results["failed"] == 0
-            else f"⚠️ {schema_results['failed']} errors"
-        )
+This project uses modern Python development practices:
 
-        overall_table.add_row(
-            "Configuration Files",
-            f"{config_results['successful']}/"
-            f"{config_results['successful'] + config_results['failed']}",
-            config_status,
-        )
-        overall_table.add_row(
-            "JSON Schemas",
-            f"{schema_results['successful']}/{schema_results['total']}",
-            schema_status,
-        )
+- **uv** for dependency management
+- **PyTorch Lightning** for training
+- **Hydra** for configuration management
+- **Rich** for beautiful CLI output
 
-        console.print("\n")
-        console.print(overall_table)
+## License
 
-    if not overall_success:
-        console.print(
-            "\n⚠️ [yellow]Generation completed with some errors. "
-            "Check the output above for details.[/yellow]"
-        )
-        raise typer.Exit(1)
+MIT License
+"""
+    
+    output_file = output_dir / "README_template.md"
+    
+    with open(output_file, 'w') as f:
+        f.write(readme_content)
+    
+    console.print(f"✅ Generated README template: {output_file}")
+
+
+def show_generation_options() -> None:
+    """Display available generation options."""
+    table = Table(title="Available Generation Commands")
+    table.add_column("Command", style="cyan")
+    table.add_column("Description", style="white")
+    
+    table.add_row("config", "Generate sample configuration files")
+    table.add_row("readme", "Generate README template")
+    
+    console.print(table)
+
+
+def generate_command(target: str, output_dir: str = ".") -> None:
+    """Main generate command dispatcher.
+    
+    Args:
+        target: What to generate ('config', 'readme', etc.)
+        output_dir: Directory to write generated files to
+    """
+    output_path = Path(output_dir)
+    
+    if target == "config":
+        generate_sample_config(output_path)
+    elif target == "readme":
+        generate_readme_template(output_path)
+    elif target == "help":
+        show_generation_options()
     else:
-        console.print(
-            "\n🎉 [green]All generation tasks completed successfully![/green]"
-        )
+        console.print(f"❌ Unknown generation target: {target}")
+        console.print("Available targets: config, readme, help")
+        return
+    
+    console.print(Panel(
+        f"Generation completed successfully!\nOutput directory: {output_path}",
+        title="✅ Success",
+        style="green"
+    ))

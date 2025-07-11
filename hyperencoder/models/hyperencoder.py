@@ -60,11 +60,3 @@ class HyperEncoder(Module):
         outer_latents = self.decoder(latents, **kwargs)
 
         return outer_latents
-
-
-# Import factory functions for backward compatibility
-# These functions are now defined in hyperencoder.factories.model_factory
-from ..factories.model_factory import (
-    create_hyperencoder_from_config,
-    create_hyperencoder,
-)

@@ -1,260 +1,174 @@
-"""Training task implementation for the CLI.
+"""
+Training task for hyperencoder using Hydra configuration.
 
-This module contains the training task that is dispatched from the main CLI.
-Updated to use proper Hydra logging and the new Pydantic configuration system.
+This module provides the main training entry point for hyperencoder models,
+configured via Hydra and using PyTorch Lightning for training.
 """
 
 import logging
-import warnings
 from pathlib import Path
+from typing import Any, Dict, Optional
 
-from lightning import Trainer, seed_everything
-from lightning.pytorch.callbacks import ModelCheckpoint
-from lightning.pytorch.loggers import WandbLogger, CometLogger
-from omegaconf import DictConfig
-from torch import set_float32_matmul_precision
-from torch.multiprocessing import set_sharing_strategy
+import hydra
+import torch
+import wandb
+from lightning import Trainer
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from lightning.pytorch.loggers import WandbLogger
+from omegaconf import DictConfig, OmegaConf
 
-from hyperencoder.data import create_datamodule_from_config
-from hyperencoder.models import create_hyperencoder_from_config
-from hyperencoder.training import (
-    AutoencoderDemoCallback,
-    create_he_training_wrapper_from_config,
-    reload_he_training_wrapper_from_config_and_ckpt,
-)
-from hyperencoder.datamodels.hydra_integration import (
-    create_training_config_from_hydra,
-    create_model_config_from_hydra,
-    create_data_config_from_hydra,
-    get_experiment_output_dir,
-    validate_and_resolve_paths,
-    print_config_summary,
-)
-
-# Configure warnings
-warnings.filterwarnings("ignore", category=FutureWarning, module="vector_quantize_pytorch")
-warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
-set_float32_matmul_precision("medium")
+from hyperencoder.training.hyperencoder import HyperEncoderLightningModule
+from hyperencoder.data.utils import create_datamodule_from_config
 
 
-def train_task(cfg: DictConfig) -> None:
-    """Main training function using Hydra configuration.
-
-    Args:
-        cfg: Hydra configuration object containing all training settings
-    """
-    import time
+@hydra.main(version_base=None, config_path="../../configs", config_name="train")
+def main(cfg: DictConfig) -> None:
+    """Main training function configured with Hydra.
     
+    Args:
+        cfg: Hydra configuration object containing all training parameters
+    """
+    # Set up logging
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    logger.info("🎯 Starting training task")
-    start_time = time.time()
-
+    
+    logger.info("🚀 Starting hyperencoder training")
+    logger.info(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")
+    
+    # Set random seed for reproducibility
+    if cfg.get("seed"):
+        torch.manual_seed(cfg.seed)
+        torch.cuda.manual_seed_all(cfg.seed)
+        logger.info(f"Set random seed to {cfg.seed}")
+    
+    # Initialize wandb if configured
+    wandb_logger = None
+    if cfg.get("logging", {}).get("use_wandb", False):
+        wandb_logger = setup_wandb_logging(cfg)
+    
+    # Create data module
+    logger.info("📊 Creating data module")
+    data_config = cfg.get("data", {})
+    datamodule = create_datamodule_from_config(data_config)
+    
+    # Create model
+    logger.info("🧠 Creating model")
+    model_config = cfg.get("model", {})
+    training_config = cfg.get("training", {})
+    demo_config = cfg.get("demo", {})
+    
+    model = HyperEncoderLightningModule(
+        model_config=model_config,
+        training_config=training_config,
+        demo_config=demo_config,
+    )
+    
+    # Set up callbacks
+    callbacks = setup_callbacks(cfg)
+    
+    # Create trainer
+    logger.info("🏋️ Creating trainer")
+    trainer_config = cfg.get("trainer", {})
+    trainer = Trainer(
+        logger=wandb_logger,
+        callbacks=callbacks,
+        max_epochs=trainer_config.get("max_epochs", 100),
+        accelerator=trainer_config.get("accelerator", "auto"),
+        devices=trainer_config.get("devices", "auto"),
+        strategy=trainer_config.get("strategy", "auto"),
+        precision=trainer_config.get("precision", "32"),
+        gradient_clip_val=trainer_config.get("gradient_clip_val", 0.0),
+        gradient_clip_algorithm=trainer_config.get("gradient_clip_algorithm", "norm"),
+        accumulate_grad_batches=trainer_config.get("accumulate_grad_batches", 1),
+        val_check_interval=trainer_config.get("val_check_interval", 1.0),
+        check_val_every_n_epoch=trainer_config.get("check_val_every_n_epoch", 1),
+        enable_checkpointing=trainer_config.get("enable_checkpointing", True),
+        enable_progress_bar=trainer_config.get("enable_progress_bar", True),
+        enable_model_summary=trainer_config.get("enable_model_summary", True),
+    )
+    
+    # Start training
+    logger.info("🎯 Starting training")
     try:
-        # Set multiprocessing strategy
-        logger.debug("🔧 Setting multiprocessing strategy to 'file_system'")
-        set_sharing_strategy("file_system")
-
-        # Create configuration objects from Hydra config
-        logger.info("📋 Creating configuration objects from Hydra config")
-        config_start = time.time()
-        
-        training_config = create_training_config_from_hydra(cfg)
-        model_config = create_model_config_from_hydra(cfg)
-        data_config = create_data_config_from_hydra(cfg)
-        
-        logger.debug(f"⏱️ Configuration creation took {time.time() - config_start:.2f}s")
-        logger.info(f"📊 Training config: {training_config.name} (seed: {training_config.seed})")
-        logger.info(f"🧠 Model config created successfully")
-        logger.info(f"💾 Data config created successfully")
-
-        # Validate and resolve paths
-        training_config = validate_and_resolve_paths(training_config)
-
-        # Print configuration summary
-        print_config_summary(training_config)
-
-        # Set random seed
-        seed_everything(training_config.seed, workers=True)
-        logger.info(f"🎲 Set random seed to {training_config.seed}")
-
-        # Create experiment logger
-        experiment_logger = None
-        experiment_dir = get_experiment_output_dir(cfg, training_config.logger)
-        
-        if training_config.logger == "wandb":
-            experiment_logger = WandbLogger(
-                project=training_config.project,
-                name=training_config.name,
-                save_dir=str(experiment_dir),
-                id=training_config.run_id,
-                log_model="all",
-            )
-            # Update experiment directory with actual wandb run ID
-            if hasattr(experiment_logger.experiment, 'id'):
-                experiment_dir = experiment_dir / experiment_logger.experiment.id
-                
-        elif training_config.logger == "comet":
-            experiment_logger = CometLogger(
-                project_name=training_config.project,
-                experiment_name=training_config.name,
-                save_dir=str(experiment_dir),
-            )
-            
-        # Create output directories
-        checkpoint_dir = experiment_dir / "checkpoints"
-        checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        
-        logger.info(f"📁 Experiment directory: {experiment_dir}")
-        logger.info(f"💾 Checkpoint directory: {checkpoint_dir}")
-
-        # Create data module
-        logger.info("🔧 Creating data module")
-        data_start = time.time()
-        datamodule = create_datamodule_from_config(data_config)
-        logger.debug(f"⏱️ Data module creation took {time.time() - data_start:.2f}s")
-        
-        # Log data module info
-        try:
-            # Try to get dataset info if available
-            if hasattr(datamodule, 'train_dataloader'):
-                train_dl = datamodule.train_dataloader()
-                if hasattr(train_dl, 'dataset') and hasattr(train_dl.dataset, '__len__'):
-                    logger.info(f"📊 Training dataset size: {len(train_dl.dataset):,} samples")
-            if hasattr(datamodule, 'val_dataloader'):
-                val_dl = datamodule.val_dataloader()
-                if hasattr(val_dl, 'dataset') and hasattr(val_dl.dataset, '__len__'):
-                    logger.info(f"📊 Validation dataset size: {len(val_dl.dataset):,} samples")
-        except Exception as e:
-            logger.debug(f"Could not get dataset size info: {e}")
-
-        # Create model
-        logger.info("🔧 Creating hyperencoder model")
-        model_start = time.time()
-        hyperencoder = create_hyperencoder_from_config(model_config)
-        logger.debug(f"⏱️ Model creation took {time.time() - model_start:.2f}s")
-        
-        # Log model info
-        if hasattr(hyperencoder, 'parameters'):
-            total_params = sum(p.numel() for p in hyperencoder.parameters())
-            trainable_params = sum(p.numel() for p in hyperencoder.parameters() if p.requires_grad)
-            logger.info(f"🧠 Model parameters: {total_params:,} total, {trainable_params:,} trainable")
-        
-        # Log memory usage if available
-        try:
-            import psutil
-            import torch
-            memory = psutil.virtual_memory()
-            logger.debug(f"💾 System memory: {memory.percent}% used ({memory.used / 1024**3:.1f}GB / {memory.total / 1024**3:.1f}GB)")
-            
-            if torch.cuda.is_available():
-                for i in range(torch.cuda.device_count()):
-                    mem_allocated = torch.cuda.memory_allocated(i) / 1024**3
-                    mem_cached = torch.cuda.memory_reserved(i) / 1024**3
-                    logger.debug(f"🎮 GPU {i} memory: {mem_allocated:.1f}GB allocated, {mem_cached:.1f}GB cached")
-        except ImportError:
-            logger.debug("💾 Memory monitoring not available (psutil not installed)")
-        except Exception as e:
-            logger.debug(f"💾 Could not get memory info: {e}")
-
-        # Create/reload training wrapper
-        if training_config.pretrained_ckpt_path:
-            logger.info(f"📥 Loading from checkpoint: {training_config.pretrained_ckpt_path}")
-            training_wrapper = reload_he_training_wrapper_from_config_and_ckpt(
-                model_config,
-                hyperencoder,
-                str(training_config.pretrained_ckpt_path),
-            )
-        else:
-            logger.info("🔧 Creating new training wrapper")
-            training_wrapper = create_he_training_wrapper_from_config(
-                model_config,
-                hyperencoder,
-            )
-
-        # Set up wandb model watching
-        if training_config.logger == "wandb" and isinstance(experiment_logger, WandbLogger):
-            experiment_logger.watch(training_wrapper)
-
-        # Create callbacks
-        callbacks = []
-        
-        # Checkpoint callback
-        checkpoint_callback = ModelCheckpoint(
-            every_n_epochs=training_config.checkpoint_every,
-            dirpath=checkpoint_dir,
-            save_last=True,
-            save_top_k=training_config.save_top_k,
-            monitor="train/loss",
-        )
-        callbacks.append(checkpoint_callback)
-
-        # Demo callback if enabled
-        if model_config.demo:
-            try:
-                from stable_audio_tools import get_pretrained_model
-                
-                pretrained_model, _ = get_pretrained_model("stabilityai/stable-audio-open-1.0")
-                if (hasattr(pretrained_model, 'pretransform') and 
-                    pretrained_model.pretransform is not None and 
-                    hasattr(pretrained_model.pretransform, 'model')):
-                    demo_callback = AutoencoderDemoCallback(
-                        datamodule.val_dataloader(),
-                        pretrained_model.pretransform.model,  # type: ignore[report-argument-type]
-                        demo_every=model_config.demo.demo_every,
-                        sample_rate=model_config.demo.sample_rate,
-                        max_demos=model_config.demo.max_demos,
-                    )
-                    callbacks.append(demo_callback)
-                    logger.info("✅ Added demo callback")
-                else:
-                    logger.warning("⚠️ Pretrained model does not have valid pretransform.model")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not create demo callback: {e}")
-
-        # Validation settings
-        val_kwargs = {}
-        if training_config.val_every > 0:
-            val_kwargs.update({
-                "check_val_every_n_epoch": None,
-                "val_check_interval": training_config.val_every,
-            })
-
-        # Create trainer
-        logger.info("🏋️ Creating trainer")
-        trainer = Trainer(
-            devices=training_config.devices,
-            accelerator="gpu",
-            num_nodes=training_config.num_nodes,
-            strategy=training_config.strategy,
-            precision=training_config.precision,
-            accumulate_grad_batches=training_config.accum_batches,
-            callbacks=callbacks,
-            logger=experiment_logger,
-            log_every_n_steps=training_config.log_every_n_steps,
-            max_epochs=training_config.max_epochs,
-            default_root_dir=str(experiment_dir),
-            gradient_clip_val=training_config.gradient_clip_val,
-            enable_progress_bar=True,
-            **val_kwargs,
-        )
-
-        # Start training
-        logger.info("🚀 Starting training")
-        logger.info(f"📊 Training setup: {training_config.max_epochs} epochs, {training_config.devices} devices")
-        logger.info(f"📊 Logging every {training_config.log_every_n_steps} steps")
-        
-        training_start = time.time()
-        trainer.fit(
-            training_wrapper,
-            datamodule=datamodule,
-            ckpt_path=str(training_config.ckpt_path) if training_config.ckpt_path else None,
-        )
-        training_duration = time.time() - training_start
-        
-        logger.info(f"✅ Training completed successfully in {training_duration:.2f}s ({training_duration/60:.1f}m)")
-        logger.info(f"📊 Total pipeline time: {time.time() - start_time:.2f}s")
-
+        trainer.fit(model, datamodule)
+        logger.info("✅ Training completed successfully")
     except Exception as e:
         logger.error(f"❌ Training failed: {e}")
-        logger.exception("Full traceback:")
         raise
+    finally:
+        # Clean up wandb
+        if wandb_logger:
+            wandb.finish()
+
+
+def setup_wandb_logging(cfg: DictConfig) -> WandbLogger:
+    """Set up wandb logging with configuration.
+    
+    Args:
+        cfg: Hydra configuration object
+        
+    Returns:
+        Configured WandbLogger instance
+    """
+    logging_config = cfg.get("logging", {})
+    
+    # Extract wandb configuration
+    project_name = logging_config.get("project_name", "hyperencoder")
+    experiment_name = logging_config.get("experiment_name", "default")
+    tags = logging_config.get("tags", [])
+    
+    # Create wandb logger
+    wandb_logger = WandbLogger(
+        project=project_name,
+        name=experiment_name,
+        tags=tags,
+        config=OmegaConf.to_container(cfg, resolve=True),
+    )
+    
+    logging.getLogger(__name__).info(f"Initialized wandb: {project_name}/{experiment_name}")
+    return wandb_logger
+
+
+def setup_callbacks(cfg: DictConfig) -> list[Any]:
+    """Set up training callbacks.
+    
+    Args:
+        cfg: Hydra configuration object
+        
+    Returns:
+        List of configured callbacks
+    """
+    callbacks = []
+    
+    # Model checkpointing
+    checkpoint_config = cfg.get("checkpointing", {})
+    if checkpoint_config.get("enabled", True):
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=checkpoint_config.get("dirpath", "checkpoints"),
+            filename=checkpoint_config.get("filename", "hyperencoder-{epoch:02d}-{val_loss:.2f}"),
+            monitor=checkpoint_config.get("monitor", "val_loss"),
+            mode=checkpoint_config.get("mode", "min"),
+            save_top_k=checkpoint_config.get("save_top_k", 3),
+            save_last=checkpoint_config.get("save_last", True),
+            every_n_epochs=checkpoint_config.get("every_n_epochs", 1),
+            verbose=checkpoint_config.get("verbose", True),
+        )
+        callbacks.append(checkpoint_callback)
+    
+    # Early stopping
+    early_stopping_config = cfg.get("early_stopping", {})
+    if early_stopping_config.get("enabled", False):
+        early_stopping_callback = EarlyStopping(
+            monitor=early_stopping_config.get("monitor", "val_loss"),
+            mode=early_stopping_config.get("mode", "min"),
+            patience=early_stopping_config.get("patience", 10),
+            min_delta=early_stopping_config.get("min_delta", 0.0),
+            verbose=early_stopping_config.get("verbose", True),
+        )
+        callbacks.append(early_stopping_callback)
+    
+    return callbacks
+
+
+if __name__ == "__main__":
+    main()
