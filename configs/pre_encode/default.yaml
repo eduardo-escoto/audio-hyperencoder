@@ -1,0 +1,12 @@
+batch_pattern: Track\d*
+batch_size: 1
+create_output_dir: true
+file_pattern: '*.wav'
+hf_token: null
+input_dir: ./data/audio
+log_failures: true
+model_name: stabilityai/stable-audio-open-1.0
+n_devices: 1
+output_dir: ./data/encoded
+path_file: null
+use_path_file: false

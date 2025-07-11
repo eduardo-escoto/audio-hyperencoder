@@ -1,0 +1,11 @@
+defaults:
+- /data: default
+- /model: default
+- /training: default
+- /hydra: default
+- _self_
+description: Basic hyperencoder experiment with default settings
+experiment_name: baseline_experiment
+project_name: audio-hyperencoder
+seed: 42
+task: train
