@@ -15,7 +15,6 @@ dependencies = [
     "numba>=0.59.0",
     "numpy>=1.23.5",
     "omegaconf>=2.3.0",
-    "pydantic>=2.11.7",
     "rich>=14.0.0",
     "safetensors>=0.5.3",
     "stable-audio-tools>=0.0.19",
@@ -27,7 +26,6 @@ dependencies = [
 
 [project.scripts]
 hyperencoder = "hyperencoder.cli.hydra_main:main"
-hyperencoder-utils = "hyperencoder.cli.dev_cli:app"
 
 [dependency-groups]
 dev = [
