@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig
 
 
-@hydra.main(version_base=None, config_path="configs", config_name="train")
+@hydra.main(version_base=None, config_path="../../configs", config_name="train")
 def main(cfg: DictConfig) -> None:
     """Main entrypoint with task dispatch."""
     logger = logging.getLogger(__name__)

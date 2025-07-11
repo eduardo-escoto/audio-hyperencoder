@@ -1,8 +1,7 @@
 from .utils import get_model_config
-from .hyperencoder import create_hyperencoder, create_hyperencoder_from_config
+from .hyperencoder import HyperEncoder
 
 __all__ = [
-    "create_hyperencoder_from_config",
-    "create_hyperencoder",
+    "HyperEncoder",
     "get_model_config",
 ]
