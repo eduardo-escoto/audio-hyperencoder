@@ -17,15 +17,19 @@ dependencies = [
     "omegaconf>=2.3.0",
     "rich>=14.0.0",
     "safetensors>=0.5.3",
-    "stable-audio-tools>=0.0.19",
+    "stable-audio-tools>=0.0.19", 
     "torch>=2.5.1",
     "torchaudio>=2.5.1",
     "typer>=0.16.0",
+    "vector-quantize-pytorch>=1.14.41",
     "wandb>=0.15.4",
 ]
 
 [project.scripts]
-hyperencoder = "hyperencoder.cli.hydra_main:main"
+hyperencoder = "hyperencoder.cli.hydra:main"
+training = "hyperencoder.cli.training:main"
+pre-encoding = "hyperencoder.cli.pre_encoding:main"
+
 
 [dependency-groups]
 dev = [
@@ -49,7 +53,7 @@ torchvision = [
 torchaudio = [
   { index = "pytorch-cu121", marker = "platform_system != 'Darwin'"},
 ]
-# stable-audio-tools = { path = "stable-audio-tools" , editable = true }
+stable-audio-tools = { path = "stable-audio-tools" , editable = true }
 # pypesq = { git = "https://github.com/vBaiCai/python-pesq" }
 
 [[tool.uv.index]]

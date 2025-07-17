@@ -4,6 +4,23 @@ from pathlib import Path
 
 from stable_audio_tools import get_pretrained_model
 
+def load_model(
+    model_config=None,
+    model_ckpt_path=None,
+    pretrained_name=None,
+    pretransform_ckpt_path=None,
+    model_half=False,
+):
+    logger = logging.getLogger()
+    logger.info(f"Loading pretrained model {pretrained_name}")
+    model = None
+    if pretrained_name is not None:
+        model, model_config = get_pretrained_model(pretrained_name)
+
+    logger.info("Done loading model")
+
+    return model, model_config
+
 
 def get_model_config(
     model_name, cache_dir="./model_cache", force_download=False, hf_token=None

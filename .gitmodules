@@ -1,0 +1,4 @@
+[submodule "stable-audio-tools"]
+	path = stable-audio-tools
+	url = https://github.com/eduardo-escoto/stable-audio-tools.git
+	branch = clean_to_uv

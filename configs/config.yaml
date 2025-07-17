@@ -1,0 +1,73 @@
+defaults:
+  - hydra
+  - _self_
+
+seed: 42
+task: train
+checkpoint_dir: 
+
+experiment_logging:
+  type: wandb
+  config:
+    name: hyperencoder
+    save_dir: ${hydra:run.dir}
+    version: null
+    offline: false
+    project: hyperencoder
+    log_model: False
+    prefix: null
+    checkpoint_name: null
+
+data:
+  dataset:
+    type: pre_encoded
+    config:
+      name: pdmx_pre_encoded
+  # name: pdmx_pre_encoded
+  # batch_size: 16
+  # num_workers: 4
+  # random_seed: 42
+  # persistent_workers: true
+  dataloader:
+    num_workers: 4
+    persistent_workers: true
+
+modeling:
+  model_type: hyperencoder
+  model:
+    encoder:
+      type: oobleck
+      config:
+        channels: 64
+        in_channels: 64
+        latent_dim: 64
+        c_mults: [1, 2]
+        strides: [2, 2]
+        use_snake: false
+    decoder:
+      type: oobleck
+      config:
+        channels: 32
+        latent_dim: 32
+        out_channels: 64
+        c_mults: [1, 2]
+        strides: [2, 2]
+        use_snake: false
+        final_tanh: false
+    bottleneck:
+      type: rvq_vae
+      config:
+        dim: 32
+        rotation_trick: false
+    latent_dim: 32
+    in_channels: 64
+    out_channels: 64
+
+training:
+  num_gpus: 1
+  num_nodes: 1
+  strategy: ddp_find_unused_parameters_true
+  gradient_clip_val: 1.0
+  save_top_k: 1
+  checkpoint_every: 1
+  # pretrained_ckpt_path: 

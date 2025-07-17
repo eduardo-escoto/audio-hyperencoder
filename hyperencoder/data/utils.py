@@ -8,9 +8,9 @@ for hyperencoder training and evaluation.
 from typing import Any, Dict, List, Optional, Union
 from omegaconf import DictConfig
 from lightning import LightningDataModule
+from hyperencoder.datamodels.data import DataConfig
 
-
-def create_datamodule_from_config(config: DictConfig) -> LightningDataModule:
+def create_datamodule_from_config(cfg: DataConfig) -> LightningDataModule:
     """Create a Lightning DataModule from a Hydra configuration.
 
     Args:
@@ -34,8 +34,8 @@ def create_datamodule_from_config(config: DictConfig) -> LightningDataModule:
         val_tuples=None,
         test_tuples=None,
         predict_tuples=None,
-        batch_size=config.get("batch_size", 32),
-        num_workers=config.get("num_workers", 4),
+        batch_size=cfg.dataloader.batch_size,
+        num_workers=cfg.dataloader.num_workers,
         # Add other parameters as needed
     )
 

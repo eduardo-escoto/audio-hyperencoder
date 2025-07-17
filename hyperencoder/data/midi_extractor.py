@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 
 # Music analysis imports
-import pretty_midi
+import miditoolkit
 import numpy as np
 
 
@@ -71,12 +71,12 @@ class MidiMetadataExtractor:
         
         try:
             # Load MIDI file
-            midi_data = pretty_midi.PrettyMIDI(str(midi_path))
+            midi_data = miditoolkit.MidiFile(str(midi_path))
             
             # Extract basic metadata
             metadata = {
                 "filename": midi_path.name,
-                "duration_seconds": midi_data.get_end_time(),
+                "duration_seconds": self._get_duration_seconds(midi_data),
             }
             
             # Extract tempo information
@@ -114,7 +114,22 @@ class MidiMetadataExtractor:
             self.logger.error(f"Error extracting metadata from {midi_path}: {e}")
             raise ValueError(f"Invalid MIDI file: {midi_path}") from e
     
-    def _extract_tempo_info(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _get_duration_seconds(self, midi_data: miditoolkit.MidiFile) -> float:
+        """Calculate duration in seconds from MIDI data."""
+        if midi_data.max_tick == 0:
+            return 0.0
+        
+        # Get the last tempo change or use default
+        tempo_bpm = 120.0  # Default tempo
+        if midi_data.tempo_changes:
+            tempo_bpm = midi_data.tempo_changes[-1].tempo
+        
+        # Convert ticks to seconds
+        seconds_per_beat = 60.0 / tempo_bpm
+        beats = midi_data.max_tick / midi_data.ticks_per_beat
+        return beats * seconds_per_beat
+    
+    def _extract_tempo_info(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract tempo information from MIDI data."""
         tempo_info = {
             "tempo_bpm": 120.0,  # Default tempo
@@ -122,17 +137,19 @@ class MidiMetadataExtractor:
         }
         
         # Get tempo changes
-        tempo_changes = midi_data.get_tempo_changes()
-        if len(tempo_changes) > 0:
-            times, tempos = tempo_changes
-            tempo_info["tempo_bpm"] = float(tempos[0])
+        if midi_data.tempo_changes:
+            # Use the first tempo as the main tempo
+            tempo_info["tempo_bpm"] = float(midi_data.tempo_changes[0].tempo)
+            
+            # Convert tempo changes to time-based format
             tempo_info["tempo_changes"] = [
-                (float(t), float(bpm)) for t, bpm in zip(times, tempos)
+                (self._tick_to_seconds(tc.time, midi_data), float(tc.tempo))
+                for tc in midi_data.tempo_changes
             ]
         
         return tempo_info
     
-    def _extract_time_signature_info(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _extract_time_signature_info(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract time signature information from MIDI data."""
         time_sig_info = {
             "time_signature_numerator": 4,
@@ -147,13 +164,17 @@ class MidiMetadataExtractor:
             time_sig_info["time_signature_denominator"] = first_ts.denominator
             
             time_sig_info["time_signature_changes"] = [
-                (float(ts.time), int(ts.numerator), int(ts.denominator))
+                (
+                    self._tick_to_seconds(ts.time, midi_data),
+                    int(ts.numerator),
+                    int(ts.denominator)
+                )
                 for ts in midi_data.time_signature_changes
             ]
         
         return time_sig_info
     
-    def _extract_key_signature_info(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _extract_key_signature_info(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract key signature information from MIDI data."""
         key_sig_info = {
             "key_signature": 0,
@@ -166,13 +187,16 @@ class MidiMetadataExtractor:
             key_sig_info["key_signature"] = first_ks.key_number
             
             key_sig_info["key_signature_changes"] = [
-                (float(ks.time), int(ks.key_number))
+                (
+                    self._tick_to_seconds(ks.time, midi_data),
+                    int(ks.key_number)
+                )
                 for ks in midi_data.key_signature_changes
             ]
         
         return key_sig_info
     
-    def _extract_note_statistics(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _extract_note_statistics(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract note statistics from MIDI data."""
         all_notes = []
         for instrument in midi_data.instruments:
@@ -195,23 +219,30 @@ class MidiMetadataExtractor:
             "note_range_min": min(note.pitch for note in all_notes),
             "note_range_max": max(note.pitch for note in all_notes),
             "avg_velocity": np.mean([note.velocity for note in all_notes]),
-            "avg_note_duration": np.mean([note.end - note.start for note in all_notes]),
+            "avg_note_duration": np.mean([
+                self._tick_to_seconds(note.end - note.start, midi_data)
+                for note in all_notes
+            ]),
         }
         
         # Calculate polyphony
-        polyphony = self._calculate_polyphony(all_notes)
+        polyphony = self._calculate_polyphony(all_notes, midi_data)
         note_stats.update(polyphony)
         
         return note_stats
     
-    def _calculate_polyphony(self, notes: List[pretty_midi.Note]) -> Dict[str, Any]:
+    def _calculate_polyphony(
+        self, 
+        notes: List[miditoolkit.Note], 
+        midi_data: miditoolkit.MidiFile
+    ) -> Dict[str, Any]:
         """Calculate polyphony statistics from notes."""
         if not notes:
             return {"polyphony_max": 0, "polyphony_avg": 0.0}
         
         # Create time grid
-        start_time = min(note.start for note in notes)
-        end_time = max(note.end for note in notes)
+        start_time = self._tick_to_seconds(min(note.start for note in notes), midi_data)
+        end_time = self._tick_to_seconds(max(note.end for note in notes), midi_data)
         
         # Sample at 100ms intervals
         sample_rate = 10  # 10 samples per second
@@ -219,7 +250,11 @@ class MidiMetadataExtractor:
         
         polyphony_values = []
         for time in times:
-            active_notes = sum(1 for note in notes if note.start <= time <= note.end)
+            active_notes = sum(
+                1 for note in notes
+                if (self._tick_to_seconds(note.start, midi_data) <= time <= 
+                    self._tick_to_seconds(note.end, midi_data))
+            )
             polyphony_values.append(active_notes)
         
         return {
@@ -227,7 +262,7 @@ class MidiMetadataExtractor:
             "polyphony_avg": np.mean(polyphony_values) if polyphony_values else 0.0,
         }
     
-    def _extract_chord_info(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _extract_chord_info(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract chord progression information from MIDI data."""
         # This is a simplified chord extraction
         # In a full implementation, you might use more sophisticated chord detection
@@ -243,7 +278,7 @@ class MidiMetadataExtractor:
         
         return chord_info
     
-    def _extract_structure_info(self, midi_data: pretty_midi.PrettyMIDI) -> Dict[str, Any]:
+    def _extract_structure_info(self, midi_data: miditoolkit.MidiFile) -> Dict[str, Any]:
         """Extract structural information from MIDI data."""
         structure_info = {
             "has_structure": False,
@@ -254,4 +289,24 @@ class MidiMetadataExtractor:
         # Structural analysis logic would go here
         # For now, return empty structure info
         
-        return structure_info 
+        return structure_info
+    
+    def _tick_to_seconds(self, ticks: int, midi_data: miditoolkit.MidiFile) -> float:
+        """Convert MIDI ticks to seconds."""
+        if midi_data.ticks_per_beat == 0:
+            return 0.0
+        
+        # Get the appropriate tempo for this tick position
+        tempo_bpm = 120.0  # Default tempo
+        
+        # Find the tempo that applies to this tick
+        for tempo_change in midi_data.tempo_changes:
+            if tempo_change.time <= ticks:
+                tempo_bpm = tempo_change.tempo
+            else:
+                break
+        
+        # Convert ticks to seconds
+        seconds_per_beat = 60.0 / tempo_bpm
+        beats = ticks / midi_data.ticks_per_beat
+        return beats * seconds_per_beat 
