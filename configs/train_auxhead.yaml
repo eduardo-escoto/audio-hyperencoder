@@ -1,0 +1,87 @@
+defaults:
+# - data/default
+# - model/default
+- training/default
+# - hydra/default
+- auxiliary_heads/basic_song_level
+- _self_
+
+    
+task: train
+
+seed: 42
+name: vqvae_hyperencoder_aux_heads
+description: First try at auxiliary heads
+experiment_name: auxhead_first_try
+project_name: audio-hyperencoder
+
+run_id: null
+save_dir: null
+
+max_epochs: 10000000
+
+data:
+  dataset_type: latents_for_hyperencoder
+  split_type: auto
+  loading_strategy: lazy
+  train_split_pct: 0.8
+  val_split_pct: 0.1
+  test_split_pct: 0.1
+  datasets:
+    - path: /deepfreeze/share_read_only/eduardo/pre_encoded_audio/pre_encoded_sPDMX/data
+  crop_config:
+    random_crop: true
+    crop_ratio: 8
+    original_crop_length: 47
+
+model:
+  model_type: hyperencoder
+  model:
+    encoder:
+      type: oobleck
+      config:
+        in_channels: 64
+        channels: 64
+        latent_dim: 64
+        c_mults: [1, 2]
+        strides: [2, 2]
+        use_snake: false
+    decoder:
+      type: oobleck
+      config:
+        out_channels: 64
+        channels: 32
+        latent_dim: 32
+        c_mults: [1, 2]
+        strides: [2, 2]
+        use_snake: false
+        final_tanh: false
+    bottleneck:
+      type: rvq_vae
+      config:
+        rotation_trick: false
+        dim: 32
+    latent_dim: 32
+    in_channels: 64
+    out_channels: 64
+
+training:
+  optimizer_configs:
+    hyperencoder:
+      optimizer:
+        type: AdamW
+        config:
+          lr: 5e-5
+          betas: [0.9, 0.999]
+          weight_decay: 1e-3
+
+demo:
+  demo_every: 500
+  max_demos: 10
+
+hydra:
+  run:
+    dir: ./data/hydra_outputs/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: ./data/hydra_multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${oc.select:hydra:job.num,0}

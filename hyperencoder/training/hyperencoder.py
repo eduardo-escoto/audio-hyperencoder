@@ -449,7 +449,7 @@ def reload_he_training_wrapper_from_config_and_ckpt(
     )
 
 
-def create_he_training_wrapper_from_config(config: ModelConfig, model: HyperEncoder):
+def create_he_training_wrapper_from_config(training_config: TrainingConfig, model_config: ModelConfig, model: HyperEncoder):
     """Create a HyperEncoder training wrapper from configuration.
 
     Args:
@@ -465,13 +465,14 @@ def create_he_training_wrapper_from_config(config: ModelConfig, model: HyperEnco
         >>> model = create_hyperencoder_from_config(config)
         >>> wrapper = create_he_training_wrapper_from_config(config, model)
     """
-    if not hasattr(config, "training") or config.training is None:
-        raise ValueError("training config must be specified in model config")
+    # if not hasattr(config, "training") or config.training is None:
+    #     raise ValueError("training config must be specified in model config")
 
     # Convert optimizer configs to the format expected by the training wrapper
     optimizer_configs = {}
-    if config.training.optimizer_configs:
-        for key, opt_config in config.training.optimizer_configs.items():
+    print(training_config)
+    if training_config.optimizer_configs:
+        for key, opt_config in training_config.optimizer_configs.items():
             optimizer_configs[key] = {
                 "optimizer": opt_config.optimizer.model_dump(),
                 "scheduler": opt_config.scheduler.model_dump()
@@ -481,8 +482,8 @@ def create_he_training_wrapper_from_config(config: ModelConfig, model: HyperEnco
 
     # Convert auxiliary heads config
     auxiliary_heads_config = None
-    if hasattr(config, "auxiliary_heads") and config.auxiliary_heads is not None:
-        auxiliary_heads_config = config.auxiliary_heads.model_dump()
+    if hasattr(model_config, "auxiliary_heads") and model_config.auxiliary_heads is not None:
+        auxiliary_heads_config = model_config.auxiliary_heads.model_dump()
 
     return HyperEncoderTrainingWrapper(
         model,

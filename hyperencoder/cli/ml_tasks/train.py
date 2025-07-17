@@ -167,6 +167,7 @@ def train_task(cfg: DictConfig) -> None:
         else:
             logger.info("🔧 Creating new training wrapper")
             training_wrapper = create_he_training_wrapper_from_config(
+                training_config,
                 model_config,
                 hyperencoder,
             )

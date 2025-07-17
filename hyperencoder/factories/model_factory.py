@@ -36,7 +36,9 @@ def create_hyperencoder_from_config(config: ModelConfig):
     """
     # Local import to avoid circular import
     from hyperencoder.models.hyperencoder import HyperEncoder
-    
+    print(config)
+    print(config.encoder)
+    print(config.encoder.model_dump())
     # Create encoder from config
     encoder = create_encoder_from_config(config.encoder.model_dump())
 

@@ -7,94 +7,92 @@
 # These heads predict basic musical features that are meaningful across different
 # musical genres and styles, focusing on universal musical properties.
 
-defaults:
-  - base_config
-
-auxiliary_heads:
-  enabled: true
-  validation_enabled: true
-  logging_interval: 100
-  
-  heads:
-    # Tempo prediction (regression)
-    - name: tempo_predictor
-      target_key: tempo_bpm
-      head_type: regression
-      loss_type: mse
-      loss_weight: 0.1
-      target_min: 60.0
-      target_max: 200.0
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      
-    # Duration prediction (regression)
-    - name: duration_predictor
-      target_key: duration_seconds
-      head_type: regression
-      loss_type: mse
-      loss_weight: 0.1
-      target_min: 10.0
-      target_max: 600.0
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      log_transform: true
-      
-    # Average velocity prediction (regression)
-    - name: velocity_predictor
-      target_key: average_velocity
-      head_type: regression
-      loss_type: mse
-      loss_weight: 0.1
-      target_min: 0.0
-      target_max: 127.0
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      
-    # Note density prediction (regression)
-    - name: note_density_predictor
-      target_key: note_density
-      head_type: regression
-      loss_type: mse
-      loss_weight: 0.1
-      target_min: 0.0
-      target_max: 50.0
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      log_transform: true
-      
-    # Time signature numerator (classification)
-    - name: time_signature_predictor
-      target_key: time_signature_numerator
-      head_type: classification
-      loss_type: ce
-      loss_weight: 0.1
-      num_classes: 16  # Support time signatures 1-16
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      
-    # Key signature (classification)
-    - name: key_signature_predictor
-      target_key: key_signature
-      head_type: classification
-      loss_type: ce
-      loss_weight: 0.1
-      num_classes: 24  # 12 major + 12 minor keys
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu
-      
-    # Number of tracks (classification)
-    - name: num_tracks_predictor
-      target_key: num_tracks
-      head_type: classification
-      loss_type: ce
-      loss_weight: 0.1
-      num_classes: 17  # Support 1-16 tracks + overflow class
-      hidden_dims: [512, 256]
-      dropout_rate: 0.1
-      activation: relu 
+model:
+  auxiliary_heads:
+    enabled: true
+    validation_enabled: true
+    logging_interval: 100
+    
+    heads:
+      # Tempo prediction (regression)
+      - name: tempo_predictor
+        target_key: tempo_bpm
+        head_type: regression
+        loss_type: mse
+        loss_weight: 0.1
+        target_min: 60.0
+        target_max: 200.0
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        
+      # Duration prediction (regression)
+      - name: duration_predictor
+        target_key: duration_seconds
+        head_type: regression
+        loss_type: mse
+        loss_weight: 0.1
+        target_min: 10.0
+        target_max: 600.0
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        log_transform: true
+        
+      # Average velocity prediction (regression)
+      - name: velocity_predictor
+        target_key: average_velocity
+        head_type: regression
+        loss_type: mse
+        loss_weight: 0.1
+        target_min: 0.0
+        target_max: 127.0
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        
+      # Note density prediction (regression)
+      - name: note_density_predictor
+        target_key: note_density
+        head_type: regression
+        loss_type: mse
+        loss_weight: 0.1
+        target_min: 0.0
+        target_max: 50.0
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        log_transform: true
+        
+      # Time signature numerator (classification)
+      - name: time_signature_predictor
+        target_key: time_signature_numerator
+        head_type: classification
+        loss_type: ce
+        loss_weight: 0.1
+        num_classes: 16  # Support time signatures 1-16
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        
+      # Key signature (classification)
+      - name: key_signature_predictor
+        target_key: key_signature
+        head_type: classification
+        loss_type: ce
+        loss_weight: 0.1
+        num_classes: 24  # 12 major + 12 minor keys
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu
+        
+      # Number of tracks (classification)
+      - name: num_tracks_predictor
+        target_key: num_tracks
+        head_type: classification
+        loss_type: ce
+        loss_weight: 0.1
+        num_classes: 17  # Support 1-16 tracks + overflow class
+        hidden_dims: [512, 256]
+        dropout_rate: 0.1
+        activation: relu 

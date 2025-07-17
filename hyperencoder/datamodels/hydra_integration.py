@@ -74,9 +74,10 @@ def create_model_config_from_hydra(cfg: DictConfig) -> ModelConfig:
     try:
         # Extract model config from the main config
         model_cfg = cfg.get("model", {})
-        
+        # print(model_cfg)
         if isinstance(model_cfg, DictConfig):
             model_dict = OmegaConf.to_container(model_cfg, resolve=True)
+            # print(model_dict)
             if isinstance(model_dict, dict):
                 logger.debug(f"Creating ModelConfig with: {model_dict}")
                 return ModelConfig(**cast(dict[str, Any], model_dict))

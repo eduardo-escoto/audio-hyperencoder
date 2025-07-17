@@ -107,126 +107,134 @@ class TrainingConfig(BaseConfig):
 class EncoderConfig(BaseConfig):
     """Configuration for encoder architecture."""
 
-    target_: str = Field(
-        default="hyperencoder.models.encoders.OobleckEncoder",
-        alias="_target_",
-        description="Target encoder class",
-        examples=[
-            "hyperencoder.models.encoders.OobleckEncoder",
-            "hyperencoder.models.encoders.ResNetEncoder",
-        ],
-    )
+    # target_: str = Field(
+    #     default="hyperencoder.models.encoders.OobleckEncoder",
+    #     alias="_target_",
+    #     description="Target encoder class",
+    #     examples=[
+    #         "hyperencoder.models.encoders.OobleckEncoder",
+    #         "hyperencoder.models.encoders.ResNetEncoder",
+    #     ],
+    # )
 
-    in_channels: int = Field(default=64, ge=1, description="Number of input channels")
+    type: str = Field(default="oobleck", description="Type of encoder")
 
-    channels: int = Field(default=4, ge=1, description="Base number of channels")
+    config: dict = Field(default_factory=dict, description="Configuration for encoder")
 
-    latent_dim: int = Field(default=4, ge=1, description="Dimension of latent space")
+    # in_channels: int = Field(default=64, ge=1, description="Number of input channels")
 
-    c_mults: list[int] = Field(
-        default=[16, 8, 4, 2, 2], description="Channel multipliers for each layer"
-    )
+    # channels: int = Field(default=4, ge=1, description="Base number of channels")
 
-    strides: list[int] = Field(
-        default=[8, 8, 4, 4, 1], description="Stride values for each layer"
-    )
+    # latent_dim: int = Field(default=4, ge=1, description="Dimension of latent space")
 
-    use_snake: bool = Field(
-        default=False, description="Whether to use Snake activation"
-    )
+    # c_mults: list[int] = Field(
+    #     default=[16, 8, 4, 2, 2], description="Channel multipliers for each layer"
+    # )
 
-    @field_validator("c_mults", "strides")
-    @classmethod
-    def validate_equal_lengths(cls, v, info):
-        """Ensure c_mults and strides have the same length."""
-        if info.field_name == "strides" and info.data.get("c_mults"):
-            c_mults = info.data["c_mults"]
-            if len(v) != len(c_mults):
-                raise ValueError(
-                    f"c_mults and strides must have the same length, got {len(c_mults)} and {len(v)}"
-                )
-        return v
+    # strides: list[int] = Field(
+    #     default=[8, 8, 4, 4, 1], description="Stride values for each layer"
+    # )
+
+    # use_snake: bool = Field(
+    #     default=False, description="Whether to use Snake activation"
+    # )
+
+    # @field_validator("c_mults", "strides")
+    # @classmethod
+    # def validate_equal_lengths(cls, v, info):
+    #     """Ensure c_mults and strides have the same length."""
+    #     if info.field_name == "strides" and info.data.get("c_mults"):
+    #         c_mults = info.data["c_mults"]
+    #         if len(v) != len(c_mults):
+    #             raise ValueError(
+    #                 f"c_mults and strides must have the same length, got {len(c_mults)} and {len(v)}"
+    #             )
+    #     return v
 
 
 class DecoderConfig(BaseConfig):
+    type: str = Field(default="oobleck", description="Type of encoder")
+
+    config: dict = Field(default_factory=dict, description="Configuration for encoder")
     """Configuration for decoder architecture."""
 
-    target_: str = Field(
-        default="hyperencoder.models.decoders.OobleckDecoder",
-        alias="_target_",
-        description="Target decoder class",
-        examples=[
-            "hyperencoder.models.decoders.OobleckDecoder",
-            "hyperencoder.models.decoders.ResNetDecoder",
-        ],
-    )
+    # target_: str = Field(
+    #     default="hyperencoder.models.decoders.OobleckDecoder",
+    #     alias="_target_",
+    #     description="Target decoder class",
+    #     examples=[
+    #         "hyperencoder.models.decoders.OobleckDecoder",
+    #         "hyperencoder.models.decoders.ResNetDecoder",
+    #     ],
+    # )
 
-    out_channels: int = Field(default=64, ge=1, description="Number of output channels")
+    # out_channels: int = Field(default=64, ge=1, description="Number of output channels")
 
-    channels: int = Field(default=4, ge=1, description="Base number of channels")
+    # channels: int = Field(default=4, ge=1, description="Base number of channels")
 
-    latent_dim: int = Field(default=4, ge=1, description="Dimension of latent space")
+    # latent_dim: int = Field(default=4, ge=1, description="Dimension of latent space")
 
-    c_mults: list[int] = Field(
-        default=[16, 8, 4, 2, 2], description="Channel multipliers for each layer"
-    )
+    # c_mults: list[int] = Field(
+    #     default=[16, 8, 4, 2, 2], description="Channel multipliers for each layer"
+    # )
 
-    strides: list[int] = Field(
-        default=[8, 8, 4, 4, 1], description="Stride values for each layer"
-    )
+    # strides: list[int] = Field(
+    #     default=[8, 8, 4, 4, 1], description="Stride values for each layer"
+    # )
 
-    use_snake: bool = Field(
-        default=False, description="Whether to use Snake activation"
-    )
+    # use_snake: bool = Field(
+    #     default=False, description="Whether to use Snake activation"
+    # )
 
-    final_tanh: bool = Field(
-        default=False, description="Whether to apply tanh activation at the end"
-    )
+    # final_tanh: bool = Field(
+    #     default=False, description="Whether to apply tanh activation at the end"
+    # )
 
-    @field_validator("c_mults", "strides")
-    @classmethod
-    def validate_equal_lengths(cls, v, info):
-        """Ensure c_mults and strides have the same length."""
-        if info.field_name == "strides" and info.data.get("c_mults"):
-            c_mults = info.data["c_mults"]
-            if len(v) != len(c_mults):
-                raise ValueError(
-                    f"c_mults and strides must have the same length, got {len(c_mults)} and {len(v)}"
-                )
-        return v
+    # @field_validator("c_mults", "strides")
+    # @classmethod
+    # def validate_equal_lengths(cls, v, info):
+    #     """Ensure c_mults and strides have the same length."""
+    #     if info.field_name == "strides" and info.data.get("c_mults"):
+    #         c_mults = info.data["c_mults"]
+    #         if len(v) != len(c_mults):
+    #             raise ValueError(
+    #                 f"c_mults and strides must have the same length, got {len(c_mults)} and {len(v)}"
+    #             )
+    #     return v
 
 
 class BottleneckConfig(BaseConfig):
     """Configuration for bottleneck architecture."""
 
-    target_: str = Field(
-        default="hyperencoder.models.bottlenecks.FSQBottleneck",
-        alias="_target_",
-        description="Target bottleneck class",
-        examples=[
-            "hyperencoder.models.bottlenecks.FSQBottleneck",
-            "hyperencoder.models.bottlenecks.VQBottleneck",
-            "hyperencoder.models.bottlenecks.NoBottleneck",
-        ],
-    )
+    # target_: str = Field(
+    #     default="hyperencoder.models.bottlenecks.FSQBottleneck",
+    #     alias="_target_",
+    #     description="Target bottleneck class",
+    #     examples=[
+    #         "hyperencoder.models.bottlenecks.FSQBottleneck",
+    #         "hyperencoder.models.bottlenecks.VQBottleneck",
+    #         "hyperencoder.models.bottlenecks.NoBottleneck",
+    #     ],
+    # )
+    type: str = Field(default="rvq_vae", description="Type of bottleneck")
+    config: dict = Field(default_factory=dict, description="Configuration for bottleneck")
+    # # FSQ-specific parameters
+    # levels: list[int] | None = Field(
+    #     default=[8, 5, 5, 5], description="Quantization levels for FSQ bottleneck"
+    # )
 
-    # FSQ-specific parameters
-    levels: list[int] | None = Field(
-        default=[8, 5, 5, 5], description="Quantization levels for FSQ bottleneck"
-    )
+    # # VQ-specific parameters
+    # num_quantizers: int | None = Field(
+    #     default=None, ge=1, description="Number of quantizers for VQ bottleneck"
+    # )
 
-    # VQ-specific parameters
-    num_quantizers: int | None = Field(
-        default=None, ge=1, description="Number of quantizers for VQ bottleneck"
-    )
+    # codebook_size: int | None = Field(
+    #     default=None, ge=1, description="Size of codebook for VQ bottleneck"
+    # )
 
-    codebook_size: int | None = Field(
-        default=None, ge=1, description="Size of codebook for VQ bottleneck"
-    )
-
-    commitment_loss_weight: float | None = Field(
-        default=None, ge=0.0, description="Weight for commitment loss in VQ"
-    )
+    # commitment_loss_weight: float | None = Field(
+    #     default=None, ge=0.0, description="Weight for commitment loss in VQ"
+    # )
 
 
 class DemoConfig(BaseConfig):
@@ -321,15 +329,16 @@ class ModelConfig(BaseConfig):
     """
 
     # Core model configuration
-    target_: str = Field(
-        default="hyperencoder.models.hyperencoder.HyperEncoder",
-        alias="_target_",
-        description="Target model class to instantiate",
-        examples=[
-            "hyperencoder.models.hyperencoder.HyperEncoder",
-            "hyperencoder.models.hyperencoder.BasicHyperEncoder",
-        ],
-    )
+    # target_: str = Field(
+    #     default="hyperencoder.models.hyperencoder.HyperEncoder",
+    #     alias="_target_",
+    #     description="Target model class to instantiate",
+    #     examples=[
+    #         "hyperencoder.models.hyperencoder.HyperEncoder",
+    #         "hyperencoder.models.hyperencoder.BasicHyperEncoder",
+    #     ],
+    # )
+    model_type: str = Field(default="hyperencoder", description="Type of model")
 
     # Architecture components
     encoder: EncoderConfig = Field(
